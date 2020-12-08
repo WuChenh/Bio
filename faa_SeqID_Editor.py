@@ -1,3 +1,4 @@
+##Copy GCF_ID of each file name to annotations in faa files.
 import re
 import os
 
@@ -34,7 +35,7 @@ def Replace_Full_Name(SeqPrior,GCF):
     return Full_Name
 
 if __name__ == '__main__':
-    dir = '/data/user/bio18/wch/big/gdownload'
+    dir = '/FILE_PATH/'
     FileList = file_list(dir)
     for FileAddress in FileList:
         GCF = GCF_code(FileAddress)
@@ -42,17 +43,15 @@ if __name__ == '__main__':
         filecontent = ''
 
         with open(FileAddress) as f0:
-            #s = f0.read().strip()
             line = f0.readline()
             while line:
                 FullLine = Replace_Full_Name(line, GCF)
                 filecontent = filecontent + FullLine
                 line = f0.readline()
         f0.close()
-        #SingleLineInFaa = re.findall(r'>\w+_\d+.\d',s)
 
         NewFileName = Output_Name + 'new'
-        NewFile = r'/data/user/bio18/wch/big/gdownload_name_edited/%s' % (NewFileName)
+        NewFile = r'/YOUR_PATH/%s' % (NewFileName)
         with open(NewFile,'w') as f1:
             f1.write(filecontent)
         f1.close()
