@@ -1,4 +1,4 @@
-#gene_families&gene_count&fetch_seq_name
+#Gene_Families&Gene_Counting_&Fetch_seq_name
 import re
 import os
 import sys
@@ -20,7 +20,7 @@ def File_Name(Address):
     return filename
 
 if __name__ == '__main__':
-    FileList = ['/data/user/bio18/wch/big/gdownload_name_edited/dump.data.mci.I14','/data/user/bio18/wch/big/gdownload_name_edited/dump.data.mci.I20','/data/user/bio18/wch/big/gdownload_name_edited/dump.data.mci.I40']
+    FileList = ['/PATH/dump.data.mci.I14','/PATH/dump.data.mci.I20','/PATH/dump.data.mci.I40']
     for FileAddress in FileList:
         filecontent = ''
         Single_Copy_filecontent = ''
@@ -44,12 +44,12 @@ if __name__ == '__main__':
         ##-------- Output Gene Families & Genes Count ------------
         NewFileName = File_Name(FileAddress)
         print('Count Gene Families of %s: \t%d' %(NewFileName,Row_Serial-1))
-        NewFile = r'/data/user/bio18/wch/big/gdownload_name_edited/%s' % (NewFileName)
+        NewFile = r'/PATH/%s' % (NewFileName)
         with open(NewFile,'w') as f1:
             f1.write(filecontent)
         
         ##-------- Output Single Copy Genes ----------------------
         SingleCopyFileName = File_Name(FileAddress)+'_Single_Copy_List.txt'
-        SingleCopyFile = r'/data/user/bio18/wch/big/gdownload_name_edited/%s' % (SingleCopyFileName)
+        SingleCopyFile = r'/PATH/%s' % (SingleCopyFileName)
         with open(SingleCopyFile,'w') as f2:
             f2.write(Single_Copy_filecontent)
