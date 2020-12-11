@@ -52,7 +52,7 @@ def Fetch_Seq_from_Files(GCF,FileList):
 
 
 if __name__ == '__main__':
-    dir = '/data/user/bio18/wch/big/gdownload_name_edited/Gene_Families/GF_with_hypothetical'
+    dir = '/FILES_PATH'
     FileList = File_list(dir)
     Seq_content = ''
     GCF_Queue = []
@@ -69,6 +69,6 @@ if __name__ == '__main__':
         Seq_content = Seq_content + Description_and_Seq
         print(New_Description(GCF_goal,frLines))
         
-    fw = open('/data/user/bio18/wch/big/gdownload_name_edited/Gene_Families/psudo_molecular_sequences_alignment.fas','w')
+    fw = open('/PATH/psudo_molecular_sequences_alignment.fas','w')
     fw.write(Seq_content)
     fw.close()
