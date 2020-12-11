@@ -13,8 +13,8 @@ def File_Name(Address,GF):
     return filename
 
 if __name__ == '__main__':
-    all_pro_address = '/data/user/bio18/wch/big/gdownload_name_edited/all_pro.faa'
-    List_Address = '/data/user/bio18/wch/big/gdownload_name_edited/dump.data.mci.I20_count_Single_Copy_List.txt'
+    all_pro_address = 'PATH/all_pro.faa'
+    List_Address = '/PATH/YOUR_Single_Copy_List'
     f0 = open(all_pro_address)
     fa = f0.readlines()
     f0.close()
@@ -56,12 +56,11 @@ if __name__ == '__main__':
 
             if T_or_F == 0:
                 Single_Copy_filecontent = Single_Copy_filecontent + seq_line + '\n'
-                #print(seq_line)
 
 
         ##------------------- Output Single Copy Sequences --------------------
         SingleCopyFileName = File_Name(List_Address,GF_x)
-        SingleCopyFile = r'/data/user/bio18/wch/big/gdownload_name_edited/Gene_Families/%s' % (SingleCopyFileName)
+        SingleCopyFile = r'/OUTPUT_PATH/%s' % (SingleCopyFileName)
         with open(SingleCopyFile,'w') as fw:
             fw.write(Single_Copy_filecontent)
-        #print(GF_x'\n')
+            
