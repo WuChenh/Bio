@@ -7,13 +7,13 @@ BranchAndBoundMedianStringSearch <- function(DNA, l) {
       prefix <- Num2Nt(s)
       opt.distance <- TotalDistance(prefix, DNA)
       if (opt.distance > best.distance) {
-        s.tmp <- s
-        s <- Bypass(s, i, 4)[[1]]
-        i <- Bypass(s.tmp, i, 4)[[2]]
+        tmp <- Bypass(s, i, 4)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       } else {
-        s.tmp <- s
-        s <- NextVertex(s, i, 4)[[1]]
-        i <- NextVertex(s.tmp, i, 4)[[2]]
+        tmp <- NextVertex(s, i, 4)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       }
     } else {
       word <- Num2Nt(s)
@@ -22,9 +22,9 @@ BranchAndBoundMedianStringSearch <- function(DNA, l) {
         best.distance <- total.dist.tmp
         best.word <- word
       }
-      s.tmp <- s
-      s <- NextVertex(s, i, 4)[[1]]
-      i <- NextVertex(s.tmp, i, 4)[[2]]
+      tmp <- NextVertex(s, i, 4)
+      s <- tmp[[1]]
+      i <- tmp[[2]]
     }
   }
   return(best.word)
