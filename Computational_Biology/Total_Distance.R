@@ -18,21 +18,21 @@ TotalDistance <- function(v, DNA) {
     if (i < nr.dna) {
       opt.d.H <- d.H.sum + 0
       if (opt.d.H > d.H.min) {
-        s.tmp <- s
-        s <- Bypass(s, i, nc.dna - len.v + 1)[[1]]
-        i <- Bypass(s.tmp, i, nc.dna - len.v + 1)[[2]]
+        tmp <- Bypass(s, i, nc.dna - len.v + 1)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       } else {
-        s.tmp <- s
-        s <- NextVertex(s, i, nc.dna - len.v + 1)[[1]]
-        i <- NextVertex(s.tmp, i, nc.dna - len.v + 1)[[2]]
+        tmp <- NextVertex(s, i, nc.dna - len.v + 1)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       }
     } else {
       if (d.H.sum < d.H.min) {
         d.H.min <- d.H.sum
       }
-      s.tmp <- s
-      s <- NextVertex(s, i, nc.dna - len.v + 1)[[1]]
-      i <- NextVertex(s.tmp, i, nc.dna - len.v + 1)[[2]]
+      tmp <- NextVertex(s, i, nc.dna - len.v + 1)
+      s <- tmp[[1]]
+      i <- tmp[[2]]
     }
   }
   return(d.H.min)
