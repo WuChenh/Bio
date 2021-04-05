@@ -10,22 +10,22 @@ BranchAndBoundMotifSearch <- function(DNA,l) {
     if (i < t) {
       opt.score <- score.tmp + (t - i) * l
       if (opt.score < best.score) {
-        s.tmp <- s
-        s <- Bypass(s, i, n-l+1)[[1]]
-        i <- Bypass(s.tmp, i, n-l+1)[[2]]
+        tmp <- Bypass(s, i, n-l+1)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       } else {
-        s.tmp <- s
-        s <- NextVertex(s, i, n-l+1)[[1]]
-        i <- NextVertex(s.tmp, i, n-l+1)[[2]]
+        tmp <- NextVertex(s, i, n-l+1)
+        s <- tmp[[1]]
+        i <- tmp[[2]]
       }
     } else {
       if (score.tmp > best.score) {
         best.score <- score.tmp
         best.motif.position <- s
       }
-      s.tmp <- s
-      s <- NextVertex(s, i, n-l+1)[[1]]
-      i <- NextVertex(s.tmp, i, n-l+1)[[2]]
+      tmp <- NextVertex(s, i, n-l+1)
+      s <- tmp[[1]]
+      i <- tmp[[2]]
     }
   }
   best.motif <- MotifOutput(MotifMatrixOutput(DNA, best.motif.position, l))
