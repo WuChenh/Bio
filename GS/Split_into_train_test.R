@@ -1,6 +1,6 @@
 Split_into_train_test <- function(train_perc, geno, pheno, splmd, envir) {
   pheno <- as.matrix(pheno)
-  num_sample <- nrow(envir)
+  num_sample <- nrow(pheno)
   train = as.matrix(sample(1:num_sample, round(num_sample * train_perc)))
   test = setdiff(1:num_sample, train)
   geno_train <- geno[train, ]
