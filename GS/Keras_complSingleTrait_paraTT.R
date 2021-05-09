@@ -1,13 +1,16 @@
 # Build NN regressor. 
-# activations : relu | leaky_relu | softmax | sigmoid | softplus | elu | tanh
-# optimizer: sgd | adam | adadelta | adagrad | nadam | rmsprop 
+# activations : relu | elu | selu | hard_sigmoid | sigmoid | linear | softmax | softplus | softsign | tanh | exponential
+# optimizer: adam | adamax | adadelta | adagrad | nadam | rmsprop 
 Keras_complSingleTrait_paraTT <- function(feed_set,
                                         batch_size=256, epochs=200,
                                         patience=NULL,
+                                        modelIn=NULL,
                                         activation='relu',
                                         optimizer=optimizer_rmsprop(),
                                         include_env=TRUE,
-                                        isScale=TRUE) {
+                                        usePCinsteadSNP=FALSE,
+                                        isScale=TRUE,
+                                        isScaleSNP=TRUE) {
   library(dplyr)
   library(parallel)
   library(foreach)
@@ -35,14 +38,23 @@ Keras_complSingleTrait_paraTT <- function(feed_set,
       
       # Test set
       if(isScale) {
-        test__envi = scale(feed_set[[t]][[2]][[4]], center = FALSE)
-        test__geno = scale(feed_set[[t]][[2]][[1]], center = FALSE)
-        test__phen = scale(as.matrix(feed_set[[t]][[2]][[2]][ , p]), center = FALSE)
+        test__envi = scale(feed_set[[t]][[2]][[4]])
+        test__phen = scale(as.matrix(feed_set[[t]][[2]][[2]][ , p]))
       } else {
         test__envi = feed_set[[t]][[2]][[4]]
-        test__geno = feed_set[[t]][[2]][[1]]
         test__phen = as.matrix(feed_set[[t]][[2]][[2]][ , p])
       }
+      
+      if (!usePCinsteadSNP) {
+        if (isScaleSNP) {
+          test__geno = scale(feed_set[[t]][[2]][[1]], center = FALSE)
+        } else {
+          test__geno = feed_set[[t]][[2]][[1]]
+        }
+      } else {
+        test__geno = feed_set[[t]][[2]][[3]][,grep("PC", colnames(feed_set[[t]][[2]][[3]]))] %>% as.numeric(as.character())
+      }
+      
       if (include_env) {
         x_test  = as.matrix(cbind(test__envi, test__geno))
       } else {
@@ -62,20 +74,30 @@ Keras_complSingleTrait_paraTT <- function(feed_set,
       #scores_list <- c()
       for (c in 1:num_cv) {
         if(isScale) {
-          train_envi = scale(feed_set[[t]][[1]][[c]][[1]][[4]], center = FALSE)
-          train_geno = scale(feed_set[[t]][[1]][[c]][[1]][[1]], center = FALSE)
-          train_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][ , p]), center = FALSE)
-          valid_envi = scale(feed_set[[t]][[1]][[c]][[2]][[4]], center = FALSE)
-          valid_geno = scale(feed_set[[t]][[1]][[c]][[2]][[1]], center = FALSE)
-          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][ , p]), center = FALSE)
+          train_envi = scale(feed_set[[t]][[1]][[c]][[1]][[4]])
+          train_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][ , p]))
+          valid_envi = scale(feed_set[[t]][[1]][[c]][[2]][[4]])
+          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][ , p]))
         } else {
           train_envi = feed_set[[t]][[1]][[c]][[1]][[4]]
-          train_geno = feed_set[[t]][[1]][[c]][[1]][[1]]
           train_phen = as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][ ,p])
           valid_envi = feed_set[[t]][[1]][[c]][[2]][[4]]
-          valid_geno = feed_set[[t]][[1]][[c]][[2]][[1]]
           valid_phen = as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][ ,p])
         }
+        
+        if (!usePCinsteadSNP) {
+          if (isScaleSNP) {
+            train_geno = scale(feed_set[[t]][[1]][[c]][[1]][[1]], center = FALSE)
+            valid_geno = scale(feed_set[[t]][[1]][[c]][[2]][[1]], center = FALSE)
+          } else {
+            train_geno = feed_set[[t]][[1]][[c]][[1]][[1]]
+            valid_geno = feed_set[[t]][[1]][[c]][[2]][[1]]
+          }
+        } else {
+          train_geno = feed_set[[t]][[1]][[c]][[1]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[c]][[1]][[3]]))] %>% as.numeric(as.character())
+          valid_geno = feed_set[[t]][[1]][[c]][[2]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[c]][[2]][[3]]))] %>% as.numeric(as.character())
+        }
+        
         if (include_env) {
           x_train = as.matrix(cbind(train_envi, train_geno))
           x_valid = as.matrix(cbind(valid_envi, valid_geno))
@@ -87,16 +109,34 @@ Keras_complSingleTrait_paraTT <- function(feed_set,
         y_valid = as.matrix(valid_phen)
         
         # Define and Refresh NN for CV
-        model = keras_model_sequential() %>%
-          layer_dense(units = 256, activation = activation, input_shape = input_shape) %>% 
-          #layer_dropout(rate = 0.6) %>% 
-          layer_dense(units = 128, activation = activation) %>%
-          #layer_dropout(rate = 0.5) %>%
-          ##layer_dense(units = 256, activation = activation) %>%
-          #layer_dropout(rate = 0.4) %>%
-          layer_dense(units = 32, activation = activation) %>%
-          #layer_dropout(rate = 0.3) %>%
-          layer_dense(units = 1)
+        if (is.null(modelIn)) {
+          if (usePCinsteadSNP) {
+            model = keras_model_sequential() %>%
+              layer_dense(units = 8, activation = activation, input_shape = input_shape) %>% 
+              #layer_dropout(rate = 0.6) %>% 
+              layer_dense(units = 4, activation = activation) %>%
+              #layer_dropout(rate = 0.5) %>%
+              ##layer_dense(units = 256, activation = activation) %>%
+              #layer_dropout(rate = 0.4) %>%
+              layer_dense(units = 2, activation = activation) %>%
+              #layer_dropout(rate = 0.3) %>%
+              layer_dense(units = 1)
+          } else {
+            model = keras_model_sequential() %>%
+              layer_dense(units = 256, activation = activation, input_shape = input_shape) %>% 
+              #layer_dropout(rate = 0.6) %>% 
+              layer_dense(units = 128, activation = activation) %>%
+              #layer_dropout(rate = 0.5) %>%
+              ##layer_dense(units = 256, activation = activation) %>%
+              #layer_dropout(rate = 0.4) %>%
+              layer_dense(units = 32, activation = activation) %>%
+              #layer_dropout(rate = 0.3) %>%
+              layer_dense(units = 1)
+          }
+        } else {
+          model = modelIn
+        }
+        
         model %>% compile(
           loss = "mse",
           #loss = "categorical_crossentropy",
