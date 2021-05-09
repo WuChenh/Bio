@@ -3,8 +3,8 @@
 # optimizer: adam | adamax | adadelta | adagrad | nadam | rmsprop 
 argv <- commandArgs(trailingOnly = TRUE)
 
-rdata_read <- "/data/user/bio18/wch/gs/rice_backup_202105072137.RData"
-setwd("/data/user/bio18/wch/gs/rice/NN_normal")
+rdata_read <- "$HOME/gs/rice_backup_202105072137.RData"
+setwd("$HOME/gs/rice/NN_normal")
 load(rdata_read)
 source('~/gs/rice/Keras_complSingleTrait_paraTT.R')
 tmp_list <- list()
