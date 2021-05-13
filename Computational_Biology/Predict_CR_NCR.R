@@ -1,3 +1,4 @@
+# Predict coding or non-coding region in DNA using HMM
 Predict_CR_NCR <- function(nt_seq, transition_prob, emission_prob) {
   library(dplyr)
   len_seq <- nchar(nt_seq)
