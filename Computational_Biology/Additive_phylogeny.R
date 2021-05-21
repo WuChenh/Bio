@@ -185,3 +185,5 @@ AP_Recursive <- function(DistMx, n_o) {
   distance[ , 1] <- as.numeric(distance[ , 1]) + delta
   return(list(edge=edge, distance=distance))
 }
+
+D <- matrix(c(0,4,10,9,4,0,8,7,10,8,0,9,9,7,9,0), ncol = 4, byrow = TRUE, dimnames = list(c("A","B","C","D"), c("A","B","C","D")))
