@@ -1,10 +1,16 @@
 # Predict coding or non-coding region in DNA using HMM
-Predict_CR_NCR <- function(nt_seq, transition_prob, emission_prob) {
+Predict_CR_NCR <- function(nt_seq, transition_prob, emission_prob, islg=TRUE) {
   library(dplyr)
   len_seq <- nchar(nt_seq)
   nt_seq <- nt_seq %>% toupper() %>% substring(1:len_seq, 1:len_seq)
-  transition_prob_lg <- log10(transition_prob)
-  emission_prob_lg <- log10(emission_prob)
+  if (islg) {
+    transition_prob_lg <- log10(transition_prob)
+    emission_prob_lg <- log10(emission_prob)
+  } else {
+    transition_prob_lg <- transition_prob
+    emission_prob_lg <- emission_prob
+  }
+  
   probability <- matrix(NA, 2, len_seq, dimnames = list(c("n","c"), nt_seq))
   # Save selection history to isNC using rbind(path_n, path_c)
   isNC <- list()
