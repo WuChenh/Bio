@@ -1,5 +1,7 @@
 # Align two sequences with penalty.
 Align_2Seqs_penalty <- function(v, w) {
+  v <- Split_each_char(v)
+  w <- Split_each_char(w)
   n <- length(v)
   m <- length(w)
   s <- matrix(0, n+1, m+1)
@@ -49,6 +51,9 @@ Align_2Seqs_penalty <- function(v, w) {
     }
   }
   alignment <- Print_Align_2Seqs(v, w, b[-1,-1], n, m)
-  print(alignment)
+  print(noquote(alignment))
   return(list(alignment=alignment, score=s[n+1,m+1], arrow_mx=b, score_mx=s))
 }
+
+w <- c('ATCTGATC')
+v <- c('TGCATAC')
