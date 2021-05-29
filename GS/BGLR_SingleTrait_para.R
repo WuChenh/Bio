@@ -23,7 +23,6 @@ BGLR_SingleTrait_para <- function(dataSet,
     out = list()
     for (ph in 1:num_ph) {
       tmp_cls = list()
-      
       # Parallel begin
       cores = detectCores() - 1
       if (num_tt < cores) { cores = num_tt }
@@ -36,7 +35,6 @@ BGLR_SingleTrait_para <- function(dataSet,
         library(parallel)
         library(foreach)
         library(doParallel)
-        
         tmp_md = list()
         for (md in 1:num_md) {
           tmp_tt = list()
@@ -61,7 +59,6 @@ BGLR_SingleTrait_para <- function(dataSet,
       }
       stopCluster(cl)
       # Parallel end
-      
       names(tmp_cls) = nam_cl
       out[[ph]] = tmp_cls
     }
