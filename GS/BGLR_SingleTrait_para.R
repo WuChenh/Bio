@@ -38,6 +38,8 @@ BGLR_SingleTrait_para <- function(dataSet,
         tmp_md = list()
         for (md in 1:num_md) {
           tmp_tt = list()
+          result_t_mx <- matrix(NA, num_tt, 3,
+                                 dimnames = list(seq(1:num_tt), c("MSE","MAE","Cor")))
           for (t in 1:num_tt) {
             x_train = rbind(dataSet[[cls]][[t]][[1]][[1]][[1]][[1]],
                             dataSet[[cls]][[t]][[1]][[1]][[2]][[1]])
@@ -51,8 +53,23 @@ BGLR_SingleTrait_para <- function(dataSet,
                                  model_list[md], nIter, burnIn, saveAt,
                                  x__test, y__test)
             tmp_tt[[t]] = BGLR_out
+            result_t_mx[t, 1] <- BGLR_out[["mse_test"]]
+            result_t_mx[t, 2] <- BGLR_out[["mae_test"]]
+            result_t_mx[t, 3] <- BGLR_out[["cor_test"]]
           }
-          tmp_md[[md]] = tmp_tt
+          mean_mse <- mean(result_t_mx[, 1])
+          mean_mae <- mean(result_t_mx[, 2])
+          mean_cor <- mean(result_t_mx[, 3])
+          sd_mse <- sd(result_t_mx[, 1])
+          sd_mae <- sd(result_t_mx[, 2])
+          sd_cor <- sd(result_t_mx[, 3])
+          p_value_mse <- (t.test(result_t_mx[, 1], alternative = "two.sided"))$p.value
+          p_value_mae <- (t.test(result_t_mx[, 2], alternative = "two.sided"))$p.value
+          p_value_cor <- (t.test(result_t_mx[, 3], alternative = "two.sided"))$p.value
+          tmp_md[[md]] = list(result=tmp_tt, resultMMC=result_t_mx,
+                              mean_mse=mean_mse, mean_mae=mean_mae, mean_cor=mean_cor,
+                              sd_mse=sd_mse, sd_mae=sd_mae, sd_cor=sd_cor,
+                              p_value_mse=p_value_mse, p_value_mae=p_value_mae, p_value_cor=p_value_cor)
         }
         names(tmp_md) = model_list
         tmp_md
@@ -84,6 +101,8 @@ BGLR_SingleTrait_para <- function(dataSet,
       tmp_md = list()
       for (md in 1:num_md) {
         tmp_tt = list()
+        result_t_mx <- matrix(NA, num_tt, 3,
+                               dimnames = list(seq(1:num_tt), c("MSE","MAE","Cor")))
         for (t in 1:num_tt) {
           x_train = rbind(dataSet[[t]][[1]][[1]][[1]][[1]],
                           dataSet[[t]][[1]][[1]][[2]][[1]])
@@ -97,8 +116,23 @@ BGLR_SingleTrait_para <- function(dataSet,
                                model_list[md], nIter, burnIn, saveAt,
                                x__test, y__test)
           tmp_tt[[t]] = BGLR_out
+          result_t_mx[t, 1] <- BGLR_out[["mse_test"]]
+          result_t_mx[t, 2] <- BGLR_out[["mae_test"]]
+          result_t_mx[t, 3] <- BGLR_out[["cor_test"]]
         }
-        tmp_md[[md]] = tmp_tt
+        mean_mse <- mean(result_t_mx[, 1])
+        mean_mae <- mean(result_t_mx[, 2])
+        mean_cor <- mean(result_t_mx[, 3])
+        sd_mse <- sd(result_t_mx[, 1])
+        sd_mae <- sd(result_t_mx[, 2])
+        sd_cor <- sd(result_t_mx[, 3])
+        p_value_mse <- (t.test(result_t_mx[, 1], alternative = "two.sided"))$p.value
+        p_value_mae <- (t.test(result_t_mx[, 2], alternative = "two.sided"))$p.value
+        p_value_cor <- (t.test(result_t_mx[, 3], alternative = "two.sided"))$p.value
+        tmp_md[[md]] = list(result=tmp_tt, resultMMC=result_t_mx,
+                            mean_mse=mean_mse, mean_mae=mean_mae, mean_cor=mean_cor,
+                            sd_mse=sd_mse, sd_mae=sd_mae, sd_cor=sd_cor,
+                            p_value_mse=p_value_mse, p_value_mae=p_value_mae, p_value_cor=p_value_cor)
       }
       names(tmp_md) = model_list
       tmp_md
