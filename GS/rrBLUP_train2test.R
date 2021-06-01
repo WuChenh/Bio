@@ -12,5 +12,5 @@ rrBLUP_train2test <- function(train, test) {
   #sd.a <- sd(accuracy)
   #p_value <- (t.test(accuracy, alternative = "two.sided"))$p.value
   #return(list(mean=mean.a, sd=sd.a, p_value=p_value, CV=CV, mod=pred_mod))
-  return(list(MSE=pMSE, Cor=pCor, MAE=pMAE, y_pred=pred, y=train[[2]], mod=pred_mod))
+  return(list(MSE=pMSE, Cor=pCor, MAE=pMAE, y_pred=pred, y=test[[2]], mod=pred_mod))
 }
