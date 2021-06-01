@@ -2,7 +2,7 @@
 Split_into_TrainValidTest_kFold <- function(sample_set, train_perc=0.8, k=10,
                                             num_TT=10, is_Cluster=TRUE,
                                             genoMx_pure=FALSE, genoMx_transpose=FALSE,
-                                            seed=NA) {
+                                            isSeed=FALSE, seed_tt=NA, seed_kf=NA) {
   #if (train_perc==1) { pureTT = TRUE } # No validation
   data_set <- list()
   if (is_Cluster) {
@@ -13,13 +13,18 @@ Split_into_TrainValidTest_kFold <- function(sample_set, train_perc=0.8, k=10,
       if (genoMx_pure) { geno <- geno[ , 10:ncol(geno)] }
       if (genoMx_transpose) { geno <- t(geno) }
       for (smpl in 1:num_TT) {
+        # set different seed for smpl
+        if (!isSeed) {
+          seed_tt <- smpl*100
+          seed_kf <- smpl*100
+        }
         tmp_tt_sets <- Split_into_train_test(train_perc, geno, sample_set[[sp]][[2]],
                                              sample_set[[sp]][[3]], sample_set[[sp]][[4]],
-                                             seed)
+                                             seed_tt[smpl])
         if (train_perc==1) {
-          subp_tt_sets[[smpl]] <- Split_into_kFold(tmp_tt_sets, k, TRUE, seed)
+          subp_tt_sets[[smpl]] <- Split_into_kFold(tmp_tt_sets, k, TRUE, seed_kf)
         } else {
-          subp_tt_sets[[smpl]] <- list(trainValid=Split_into_kFold(tmp_tt_sets[[1]], k, FALSE, seed),
+          subp_tt_sets[[smpl]] <- list(trainValid=Split_into_kFold(tmp_tt_sets[[1]], k, FALSE, seed_kf),
                                        test=tmp_tt_sets[[2]])
         }
       }
@@ -32,12 +37,17 @@ Split_into_TrainValidTest_kFold <- function(sample_set, train_perc=0.8, k=10,
     if (genoMx_pure) { geno <- geno[ , 10:ncol(geno)] }
     if (genoMx_transpose) { geno <- t(geno) }
     for (smpl in 1:num_TT) {
+      # set different seed for smpl
+      if (!isSeed) {
+        seed_tt <- smpl*100
+        seed_kf <- smpl*100
+      }
       tmp_tt_sets <- Split_into_train_test(train_perc, geno, sample_set[[2]],
-                                           sample_set[[3]], sample_set[[4]], seed)
+                                           sample_set[[3]], sample_set[[4]], seed_tt[smpl])
       if (train_perc==1) {
-        tt_sets[[smpl]] <- Split_into_kFold(tmp_tt_sets, k, TRUE, seed)
+        tt_sets[[smpl]] <- Split_into_kFold(tmp_tt_sets, k, TRUE, seed_kf)
       } else {
-        tt_sets[[smpl]] <- list(trainValid=Split_into_kFold(tmp_tt_sets[[1]], k, FALSE, seed),
+        tt_sets[[smpl]] <- list(trainValid=Split_into_kFold(tmp_tt_sets[[1]], k, FALSE, seed_kf),
                               test=tmp_tt_sets[[2]])
       }
     }
