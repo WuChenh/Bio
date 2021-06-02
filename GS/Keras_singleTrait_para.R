@@ -1,4 +1,4 @@
-# Build NN regressor. 
+# Build NN regressor, parallel. 
 # activations : relu | elu | selu | hard_sigmoid | sigmoid | linear | softmax | softplus | softsign | tanh | exponential
 # optimizer: adam | adamax | adadelta | adagrad | nadam | rmsprop 
 Keras_singleTrait_para <- function(feed_set,
@@ -182,11 +182,14 @@ Keras_singleTrait_para <- function(feed_set,
            test_prediction=list(y_pred=test_prediction, y_test=y_test))
     }
     stopCluster(cl)
+    #save(list=c("tmp_tt"), file = paste(c("tmp_tt_p", p, ".RData"), collapse = ""))
     result_t_mx <- matrix(NA, num_tt, 5,
                           dimnames = list(seq(1:num_tt), c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_mean")))
     nam_tt <- c()
     for (rtt in 1:num_tt) {
-      result_t_mx[rtt, ] <- c(min(tmp_tt[[3]]),mean(tmp_tt[[3]]),min(tmp_tt[[2]]),mean(tmp_tt[[2]]),mean(tmp_tt[[4]]))
+      result_t_mx[rtt, ] <- c(min(tmp_tt[[rtt]][[3]]), mean(tmp_tt[[rtt]][[3]]),
+                              min(tmp_tt[[rtt]][[2]]), mean(tmp_tt[[rtt]][[2]]),
+                              mean(tmp_tt[[rtt]][[4]]))
       nam_tt <- c(nam_tt, paste("random_tt_", rtt, sep = ""))
     }
     #nam_tt <- names(tmp_tt)
