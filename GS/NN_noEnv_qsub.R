@@ -2,14 +2,14 @@
 # activations : relu | elu | selu | hard_sigmoid | sigmoid | linear | softmax | softplus | softsign | tanh | exponential
 # optimizer: adam | adamax | adadelta | adagrad | nadam | rmsprop 
 argv <- commandArgs(trailingOnly = TRUE)
-rdata_read <- "/data/user/bio18/wch/gs/_rice_compl_noSubp.RData"
-setwd("/data/user/bio18/wch/gs/rice/NN_noEnv")
+rdata_read <- "~/gs/_rice_compl_noSubp.RData"
+setwd("~/gs/rice/NN_noEnv")
 load(rdata_read)
 source('~/gs/rice/Keras_singleTrait_para.R')
 tmp_list <- list()
 print(argv)
 
-#e.g. NN_relu_rice_compl_t0.7k05_b128e200
+#e.g. NN_relu_noEnv_t0.7k05_b128
 if (as.logical(argv[6])) {
   isenv <- "env"
 } else {
@@ -52,5 +52,4 @@ print(time_end - time_begin)
 
 names(tmp_list) <- c(variable_name)
 list2env(tmp_list, .GlobalEnv)
-#rm(list=names(globalenv())[-which(names(globalenv())%in%c(variable_name, "argv"))])
 save(list=c(variable_name), file = save_name)
