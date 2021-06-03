@@ -9,7 +9,12 @@ rrBLUP_pipe <- function(dataSet, isCluster=FALSE, para=FALSE) {
     nam_cls <- names(dataSet)
     num_cls <- length(dataSet)
     for (cls in 1:num_cls) {
-      result[[cls]] <- rrBLUP_for_pheno(dataSet, isCluster, cls)
+      # Skip the cluster which has less than 10 training samples.
+      if (nrow(as.matrix(dataSet[[cls]][[1]][[1]][[1]]$train$phen_train)) < 10) {
+        result[[cls]] <- "This cluster has less than 10 training samples."
+      } else {
+        result[[cls]] <- rrBLUP_for_pheno(dataSet, isCluster, cls)
+      }
     }
     names(result) <- nam_cls
   } else {
