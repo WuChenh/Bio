@@ -14,11 +14,12 @@ BGLR_pipe <- function(x, y, model, nIter, burnIn, saveAt=NULL,
   bayes[[length(bayes)+1]] <- cor(pred_test, y__test)
   bayes[[length(bayes)+1]] <- mse(pred_test, y__test)
   bayes[[length(bayes)+1]] <- mae(pred_test, y__test)
+  bayes[[length(bayes)+1]] <- t.test(pred_test, y__test)$p.value
   bayes[[length(bayes)+1]] <- y__test
   bayes[[length(bayes)+1]] <- pred_test
   names(bayes) <- c(nam_bayes,
                     "cor_train", "mse_train", "mae_train",
-                    "cor_test", "mse_test", "mae_test",
+                    "cor_test", "mse_test", "mae_test", "p_value_test",
                     "y_test", "pred_test")
   return(bayes)
 }
