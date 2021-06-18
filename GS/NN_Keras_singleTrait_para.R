@@ -184,12 +184,12 @@ Keras_singleTrait_para <- function(feed_set,
     stopCluster(cl)
     #save(list=c("tmp_tt"), file = paste(c("tmp_tt_p", p, ".RData"), collapse = ""))
     result_t_mx <- matrix(NA, num_tt, 5,
-                          dimnames = list(seq(1:num_tt), c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_mean")))
+                          dimnames = list(seq(1:num_tt), c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_max")))
     nam_tt <- c()
     for (rtt in 1:num_tt) {
       result_t_mx[rtt, ] <- c(min(tmp_tt[[rtt]][[3]]), mean(tmp_tt[[rtt]][[3]]),
                               min(tmp_tt[[rtt]][[2]]), mean(tmp_tt[[rtt]][[2]]),
-                              mean(tmp_tt[[rtt]][[4]]))
+                              max(tmp_tt[[rtt]][[4]]))
       nam_tt <- c(nam_tt, paste("random_tt_", rtt, sep = ""))
     }
     #nam_tt <- names(tmp_tt)
@@ -198,7 +198,7 @@ Keras_singleTrait_para <- function(feed_set,
                                        MAE_mean=(t.test(result_t_mx[, 2], alternative = "two.sided"))$p.value,
                                        loss_min=(t.test(result_t_mx[, 3], alternative = "two.sided"))$p.value,
                                        loss_mean=(t.test(result_t_mx[, 4], alternative = "two.sided"))$p.value,
-                                       Cor_mean=(t.test(result_t_mx[, 5], alternative = "two.sided"))$p.value)
+                                       Cor_max=(t.test(result_t_mx[, 5], alternative = "two.sided"))$p.value)
     names(tmp_tt) <- c(nam_tt, "resultMLC", "p_value")
     result[[p]] <- tmp_tt
   }
