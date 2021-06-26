@@ -1,3 +1,70 @@
+#plot_subpopulation
+if (FALSE) {
+  rice.climate <- sampPosi
+  rm(list=names(globalenv())[grep('rice_', names(globalenv()))])
+  save(list=names(globalenv())[grep('rice.', names(globalenv()))], file="rice.origin.RData")
+  #xz -9vk --threads=20 rice.origin.RData
+  # -------------------------- plot subp conut --------------------------#
+  library(ggplot2)
+  # This method is worse.
+  num_subp_all <- rbind(cbind('NA_was_eliminated', as.character(rice.compl[["splm"]][["Sub.population"]])),
+                        cbind('Complete', as.character(rice.origin[["SD1"]][["Sub.population"]])))
+  colnames(num_subp_all) <- c('Data', 'Subpopulation')
+  num_subp_all <- as.data.frame(num_subp_all)
+  ggplot(num_subp_all, aes(x=Subpopulation, fill=Data)) +
+    geom_bar(position="dodge", width = .5) +
+    labs(title='Count Subpopulations') +
+    theme(legend.position = c(.15, .85),
+          legend.background = element_blank())
+  # The following method is better!
+  if (FALSE) {
+    count_subp <- function() {
+      # no NA ----------------------
+      num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
+      nam_subp_compl <- names(rice.subp.compl)
+      out_compl <- as.data.frame(matrix(NA, nrow = length(nam_subp_compl), ncol = 3))
+      for (sp in 1:length(nam_subp_compl)) {
+        out_compl[sp, 1] <- nam_subp_compl[sp]
+        out_compl[sp, 2] <- nrow(rice.subp.compl[[sp]][[1]])
+        out_compl[sp, 3] <- out_compl[sp, 2]/num_comp
+      }
+      out_compl[, 2] <- as.numeric(out_compl[, 2])
+      out_compl[, 3] <- as.numeric(out_compl[, 3])
+      # original --------------------
+      num_orig <- length(rice.origin[["SD1"]][["Sub.population"]])
+      nam_subp <- names(rice.subp)
+      out <- as.data.frame(matrix(NA, nrow = length(nam_subp), ncol = 3))
+      for (sp in 1:length(nam_subp)) {
+        out[sp, 1] <- nam_subp[sp]
+        out[sp, 2] <- nrow(rice.subp[[sp]][[1]])
+        out[sp, 3] <- out[sp, 2]/num_orig
+      }
+      out[, 2] <- as.numeric(out[, 2])
+      out[, 3] <- as.numeric(out[, 3])
+      return(list(origin=out, no_NA=out_compl))
+    }
+    
+    num_ratio_subp <- count_subp()
+    p1 <- cbind(num_ratio_subp$origin, 'Complete_Data')
+    p2 <- cbind(num_ratio_subp$no_NA, 'NA_was_eliminated')
+    colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Data')
+    colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Data')
+    num_ratio_subp <- rbind(p1, p2)
+    rm(p1, p2)
+    #
+    ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Data, group=Data)) +
+      ylim(c(0,110)) +
+      geom_bar(position="dodge", width = .5, stat="identity") +
+      labs(title='Count Subpopulations') +
+      theme(legend.position = c(.15, .85),
+            legend.background = element_blank()) +
+      geom_text(show.legend = FALSE, 
+                aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
+                position=position_dodge2(.6), size=2.6, hjust=.4)
+  }
+}
+# -------------------------------------------------------------- #
+
 Collect_result <- function(is_BGLR=FALSE, is_NN=FALSE, is_rrBLUP=FALSE) {
   q1 <- NULL
   q2 <- NULL
@@ -164,6 +231,7 @@ Collect_BGLR <- function(is_subp=FALSE, is_lg_MAE=TRUE) {
   }
   return(out)
 }
+
 result_BGLR <- function(result, stk, is_subp=FALSE) {
   if (is_subp) {
     mx <- matrix(NA, 1, 5)
@@ -193,6 +261,7 @@ result_BGLR <- function(result, stk, is_subp=FALSE) {
     return(mx[-1, ])
   }
 }
+
 #--------------------------- plot_BGLR ------------------------#
 if (FALSE) {
   rm(BGLR_singleTrait_subp_t0.7k05,
@@ -218,7 +287,94 @@ if (FALSE) {
 
 
 # ------------------------------- rrBLUP --------------------------------#
+# Compare subp and not
+Collect_rrBLUP <- function(is_subp=FALSE, is_lg_MAE=TRUE) {
+  r_results <- names(globalenv())[grep('rrBLUP_', names(globalenv()))]
+  if (!is_subp) {
+    r_x <- r_results[grep("nosubp", r_results)]
+    out <- matrix(NA, 1, 3)
+    for (r in r_x) {
+      st <- Substring_stkb(r, FALSE, FALSE)
+      out <- rbind(out, result_rrBLUP(.GlobalEnv[[r]], st))
+    }
+  } else {
+    r_x <- r_results[grep("_subp", r_results)]
+    out <- matrix(NA, 1, 4)
+    for (r in r_x) {
+      st <- Substring_stkb(r, FALSE, FALSE)
+      out <- rbind(out, result_rrBLUP(.GlobalEnv[[r]], st, TRUE))
+    }
+  }
+  out <- as.data.frame(out[-1, ])
+  if (is_subp) {
+    colnames(out) <- c("arg", "Subpopulation", "Phenotype", "MAE")
+  } else {
+    colnames(out) <- c("arg", "Phenotype", "MAE")
+  }
+  rownames(out) <- seq(1:nrow(out))
+  out[, ncol(out)] <- as.numeric(as.character(out[, ncol(out)]))
+  if (is_lg_MAE) {
+    out[, ncol(out)] <- -log10(out[, ncol(out)])
+  }
+  return(out)
+}
 
+result_rrBLUP <- function(result, st, is_subp=FALSE) {
+  if (is_subp) {
+    mx <- matrix(NA, 1, 4)
+    for (sp in names(result)) {
+      # Skip blank subpopulation
+      if (class(result[[sp]]) != "list") { next }
+      for (ph in names(result[[sp]])) {
+        mx <- rbind(mx, c(st, sp, ph, result[[sp]][[ph]][["mean_mae"]]))
+      }
+    }
+    colnames(mx) <- c("arg", "Subpopulation", "Phenotype", "MAE")
+    return(mx[-1, ])
+  } else {
+    mx <- matrix(NA, 1, 3)
+    for (ph in names(result)) {
+      mx <- rbind(mx, c(st, ph, result[[ph]][["mean_mae"]]))
+    }
+    colnames(mx) <- c("arg", "Phenotype", "MAE")
+    return(mx[-1, ])
+  }
+}
+
+A_random_produced_prediction <- function(subset_random, y_name, y_pred_name) {
+  orig <- c()
+  pred <- c()
+  for (i in 1:length(subset_random)) {
+    orig <- c(orig, as.numeric(as.vector(subset_random[[i]][[y_name]])))
+    pred <- c(pred, as.numeric(as.vector(subset_random[[i]][[y_pred_name]])))
+    if (length(orig) != length(pred)) {
+      print("Unequal length!")
+      return(NULL)
+    }
+  }
+  return(list(y=orig, y_hat=pred))
+}
+
+# ------------------------------ plot rrBLUP ----------------------------#
+if (FALSE) {
+  rm(rrBLUP_subp_t0.7k05, rrBLUP_subp_t0.8k05, rrBLUP_nosubp_t0.7k05, rrBLUP_nosubp_t0.8k05)
+  #
+  rrBLUP_subp_plot <- Collect_rrBLUP(TRUE, TRUE)
+  rrBLUP_nosubp_plot <- Collect_rrBLUP(FALSE, TRUE)
+  rrBLUP_nosubp_plot4col <- cbind(rrBLUP_nosubp_plot[,1], "N/A", rrBLUP_nosubp_plot[,2:3])
+  colnames(rrBLUP_nosubp_plot4col) <- c("arg", "Subpopulation", "Phenotype", "MAE")
+  rrBLUP_all_plot <- rbind(rrBLUP_subp_plot, rrBLUP_nosubp_plot4col)
+  colnames(rrBLUP_all_plot) <- c("arg", "Subpopulation", "Phenotype", "MAE")
+  rm(rrBLUP_nosubp_plot4col)
+  ggplot(rrBLUP_all_plot, aes(x=Phenotype, y=MAE, color=Subpopulation)) +
+    geom_point(alpha=0.5, size=1.5) +
+    #geom_line(aes(color=model)) +
+    xlab("Phenotype") + 
+    ylab("-lg(MAE)") +
+    labs(title='rrBLUP Prediction') +
+    #facet_grid(arg~.)
+    facet_wrap(~arg, nrow = 2)
+}
 
 
 if (FALSE) {
