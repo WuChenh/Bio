@@ -1,4 +1,4 @@
-#plot_subpopulation
+#-------------------------- Plot_Subpopulation ------------------------#
 if (FALSE) {
   rice.climate <- sampPosi
   rm(list=names(globalenv())[grep('rice_', names(globalenv()))])
@@ -6,7 +6,7 @@ if (FALSE) {
   #xz -9vk --threads=20 rice.origin.RData
   # -------------------------- plot subp conut --------------------------#
   library(ggplot2)
-  # This method is worse.
+  # -----------------  This method is worse. ------------------------- #
   num_subp_all <- rbind(cbind('NA_was_eliminated', as.character(rice.compl[["splm"]][["Sub.population"]])),
                         cbind('Complete', as.character(rice.origin[["SD1"]][["Sub.population"]])))
   colnames(num_subp_all) <- c('Data', 'Subpopulation')
@@ -16,54 +16,53 @@ if (FALSE) {
     labs(title='Count Subpopulations') +
     theme(legend.position = c(.15, .85),
           legend.background = element_blank())
-  # The following method is better!
-  if (FALSE) {
-    count_subp <- function() {
-      # no NA ----------------------
-      num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
-      nam_subp_compl <- names(rice.subp.compl)
-      out_compl <- as.data.frame(matrix(NA, nrow = length(nam_subp_compl), ncol = 3))
-      for (sp in 1:length(nam_subp_compl)) {
-        out_compl[sp, 1] <- nam_subp_compl[sp]
-        out_compl[sp, 2] <- nrow(rice.subp.compl[[sp]][[1]])
-        out_compl[sp, 3] <- out_compl[sp, 2]/num_comp
-      }
-      out_compl[, 2] <- as.numeric(out_compl[, 2])
-      out_compl[, 3] <- as.numeric(out_compl[, 3])
-      # original --------------------
-      num_orig <- length(rice.origin[["SD1"]][["Sub.population"]])
-      nam_subp <- names(rice.subp)
-      out <- as.data.frame(matrix(NA, nrow = length(nam_subp), ncol = 3))
-      for (sp in 1:length(nam_subp)) {
-        out[sp, 1] <- nam_subp[sp]
-        out[sp, 2] <- nrow(rice.subp[[sp]][[1]])
-        out[sp, 3] <- out[sp, 2]/num_orig
-      }
-      out[, 2] <- as.numeric(out[, 2])
-      out[, 3] <- as.numeric(out[, 3])
-      return(list(origin=out, no_NA=out_compl))
-    }
-    
-    num_ratio_subp <- count_subp()
-    p1 <- cbind(num_ratio_subp$origin, 'Complete_Data')
-    p2 <- cbind(num_ratio_subp$no_NA, 'NA_was_eliminated')
-    colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Data')
-    colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Data')
-    num_ratio_subp <- rbind(p1, p2)
-    rm(p1, p2)
-    #
-    ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Data, group=Data)) +
-      ylim(c(0,110)) +
-      geom_bar(position="dodge", width = .5, stat="identity") +
-      labs(title='Count Subpopulations') +
-      theme(legend.position = c(.15, .85),
-            legend.background = element_blank()) +
-      geom_text(show.legend = FALSE, 
-                aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
-                position=position_dodge2(.6), size=2.6, hjust=.4)
+  
+  # ------------- The following plot method is better! ------------- #
+  num_ratio_subp <- count_subp()
+  p1 <- cbind(num_ratio_subp$origin, 'Complete')
+  p2 <- cbind(num_ratio_subp$no_NA, 'Removed samples with missing values')
+  colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
+  colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
+  num_ratio_subp <- rbind(p1, p2)
+  rm(p1, p2)
+  #
+  ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, group=Dataset)) +
+    ylim(c(0,110)) +
+    geom_bar(position="dodge", width = .5, stat="identity") +
+    labs(title='Count Subpopulations') +
+    theme(legend.position = c(.22, .85),
+          legend.background = element_blank()) +
+    geom_text(show.legend = FALSE, 
+              aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
+              position=position_dodge2(.6), size=2.6, hjust=.4)
+}
+count_subp <- function() {
+  # no NA ----------------------
+  num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
+  nam_subp_compl <- names(rice.subp.compl)
+  out_compl <- as.data.frame(matrix(NA, nrow = length(nam_subp_compl), ncol = 3))
+  for (sp in 1:length(nam_subp_compl)) {
+    out_compl[sp, 1] <- nam_subp_compl[sp]
+    out_compl[sp, 2] <- nrow(rice.subp.compl[[sp]][[1]])
+    out_compl[sp, 3] <- out_compl[sp, 2]/num_comp
   }
+  out_compl[, 2] <- as.numeric(out_compl[, 2])
+  out_compl[, 3] <- as.numeric(out_compl[, 3])
+  # original --------------------
+  num_orig <- length(rice.origin[["SD1"]][["Sub.population"]])
+  nam_subp <- names(rice.subp)
+  out <- as.data.frame(matrix(NA, nrow = length(nam_subp), ncol = 3))
+  for (sp in 1:length(nam_subp)) {
+    out[sp, 1] <- nam_subp[sp]
+    out[sp, 2] <- nrow(rice.subp[[sp]][[1]])
+    out[sp, 3] <- out[sp, 2]/num_orig
+  }
+  out[, 2] <- as.numeric(out[, 2])
+  out[, 3] <- as.numeric(out[, 3])
+  return(list(origin=out, no_NA=out_compl))
 }
 # -------------------------------------------------------------- #
+
 
 Collect_result <- function(is_BGLR=FALSE, is_NN=FALSE, is_rrBLUP=FALSE) {
   q1 <- NULL
