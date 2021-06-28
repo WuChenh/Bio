@@ -79,6 +79,20 @@ Collect_result <- function(is_BGLR=FALSE, is_NN=FALSE, is_rrBLUP=FALSE) {
   }
 }
 
+A_random_produced_prediction <- function(subset_random, y_name, y_pred_name) {
+  orig <- c()
+  pred <- c()
+  for (i in 1:length(subset_random)) {
+    orig <- c(orig, as.numeric(as.vector(subset_random[[i]][[y_name]])))
+    pred <- c(pred, as.numeric(as.vector(subset_random[[i]][[y_pred_name]])))
+    if (length(orig) != length(pred)) {
+      print("Unequal length!")
+      return(NULL)
+    }
+  }
+  return(list(y=orig, y_hat=pred))
+}
+
 Substring_stkb <- function(vname, is_batch=FALSE, is_k=TRUE) {
   # Auto recognize subp/nosubp
   reg_stk <- regexec("_subp_+t0.[1-9]+k[0-9][0-9]", vname)
@@ -340,20 +354,6 @@ result_rrBLUP <- function(result, st, is_subp=FALSE) {
   }
 }
 
-A_random_produced_prediction <- function(subset_random, y_name, y_pred_name) {
-  orig <- c()
-  pred <- c()
-  for (i in 1:length(subset_random)) {
-    orig <- c(orig, as.numeric(as.vector(subset_random[[i]][[y_name]])))
-    pred <- c(pred, as.numeric(as.vector(subset_random[[i]][[y_pred_name]])))
-    if (length(orig) != length(pred)) {
-      print("Unequal length!")
-      return(NULL)
-    }
-  }
-  return(list(y=orig, y_hat=pred))
-}
-
 # ------------------------------ plot rrBLUP ----------------------------#
 if (FALSE) {
   rm(rrBLUP_subp_t0.7k05, rrBLUP_subp_t0.8k05, rrBLUP_nosubp_t0.7k05, rrBLUP_nosubp_t0.8k05)
@@ -377,29 +377,14 @@ if (FALSE) {
 
 
 if (FALSE) {
-#################### Comparing methods ####################
-library(ggplot2)
-xMethod_yMSE <- matrix(NA, 1, 3)
-# with env
-
-# no env
-# t0.7k05
-
-dimnames(xMethod_yMSE) <- list(seq(1:nrow(xMethod_yMSE)),
-                               c("-lgMAE", "Method", "Phenotype"))
-#dimnames(xMethod_yMSE) <- list(seq(1:nrow(xMethod_yMSE)),
-#                               c("-lgMAE", "Method", "Subpopulation"))
-}
-
-if (FALSE) {
-ggplot(data = economics_long, aes(x = date, y = value01, color= variable)) +
-  geom_line()
-
-ggplot(singer, aes(x=voice.part, y=height)) + 
-  geom_violin(fill="lightblue") +
-  geom_boxplot(fill="steelblue", width=.2)
-
-plot(x=BGLR_subpSingleTrait_t0.7k10[["PF"]][["IND"]][["FIXED"]][[1]][["y"]],
-     y=BGLR_subpSingleTrait_t0.7k10[["PF"]][["IND"]][["FIXED"]][[1]][["yHat"]],
-     xlab = "y", ylab = "yHat")
+  # ----------------------------------- Climate PCA -------------------------- #
+  climate.f <- scale(as.data.frame(rice.compl[["envi"]]))
+  climate.f.pr <- princomp(climate.f, cor = TRUE)
+  climate.f.eigen <- eigen(cor(climate.f))
+  screeplot(climate.f.pr, type = 'lines')
+  biplot(climate.f.pr)
+  #
+  library(psych)
+  fa.parallel(climate.f, fa = "pc", n.iter = 200, show.legend = FALSE)
+  climate.f.pc <- principal(climate.f, nfactors = 5, scores = TRUE)
 }
