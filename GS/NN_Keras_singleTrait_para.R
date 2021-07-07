@@ -6,11 +6,19 @@ Keras_singleTrait_para <- function(feed_set,
                                    patience=NULL,
                                    modelIn=NULL,
                                    activation='relu',
-                                   optimizer=optimizer_rmsprop(),
+                                   optimizer='rmsprop', #optimizer_rmsprop(),
                                    include_env=TRUE,
                                    usePCinsteadSNP=FALSE,
                                    isScale=TRUE,
-                                   isScaleSNP=TRUE) {
+                                   isScaleSNP=TRUE,
+                                   p1=1, pn=NA,
+                                   dropout=.4,
+                                   nlayer=5,
+                                   layer1_units=512,
+                                   layer2_units=256,
+                                   layer3_units=128,
+                                   layer4_units=64,
+                                   layer5_units=32) {
   library(dplyr)
   library(parallel)
   library(foreach)
@@ -21,15 +29,16 @@ Keras_singleTrait_para <- function(feed_set,
   num_tt <- length(feed_set)
   num_cv <- length(feed_set[[1]][[1]])
   num_ph <- length(nam_ph)
+  if (is.na(pn)) { pn <- num_ph}
   result <- list()
-  
-  for (p in 1:num_ph) {
-    cores <- detectCores() - 2
-    if (num_tt < cores) { cores = num_tt }
-    cl <- makeCluster(cores)
+  for (p in p1:pn) {
+    print("--------- Testing ---------")
+    #cores <- detectCores() - 2
+    #if (num_tt < cores) { cores = num_tt }
+    cl <- makeCluster(10)
     registerDoParallel(cl)
     tmp_tt <- foreach(t = 1:num_tt) %dopar% {
-      library(magrittr)
+      #library(magrittr)
       library(keras)
       library(dplyr)
       library(parallel)
@@ -38,10 +47,10 @@ Keras_singleTrait_para <- function(feed_set,
       # Test set
       if(isScale) {
         test__envi = scale(feed_set[[t]][[2]][[4]])
-        test__phen = scale(as.matrix(feed_set[[t]][[2]][[2]][ , p]))
+        test__phen = scale(as.matrix(feed_set[[t]][[2]][[2]][, p]))
       } else {
         test__envi = feed_set[[t]][[2]][[4]]
-        test__phen = as.matrix(feed_set[[t]][[2]][[2]][ , p])
+        test__phen = as.matrix(feed_set[[t]][[2]][[2]][, p])
       }
       if (!usePCinsteadSNP) {
         if (isScaleSNP) {
@@ -62,6 +71,7 @@ Keras_singleTrait_para <- function(feed_set,
       input_shape = ncol(x_test)
       
       # CV
+      print("--------- Testing ---------")
       history_list <- list()
       #train_loss <- c()
       #train_mean_absolute_error <- c()
@@ -74,14 +84,14 @@ Keras_singleTrait_para <- function(feed_set,
       for (c in 1:num_cv) {
         if(isScale) {
           train_envi = scale(feed_set[[t]][[1]][[c]][[1]][[4]])
-          train_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][ , p]))
+          train_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][, p]))
           valid_envi = scale(feed_set[[t]][[1]][[c]][[2]][[4]])
-          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][ , p]))
+          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][, p]))
         } else {
           train_envi = feed_set[[t]][[1]][[c]][[1]][[4]]
-          train_phen = as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][ ,p])
+          train_phen = as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][, p])
           valid_envi = feed_set[[t]][[1]][[c]][[2]][[4]]
-          valid_phen = as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][ ,p])
+          valid_phen = as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][, p])
         }
         
         if (!usePCinsteadSNP) {
@@ -132,14 +142,50 @@ Keras_singleTrait_para <- function(feed_set,
               #layer_dropout(rate = 0.3) %>%
               layer_dense(units = 1)
           }
-        } else {
+        }
+        if (!is.null(modelIn)) {
+          # Model
+          if (nlayer == 3) {
+            modelIn = keras_model_sequential() %>%
+              layer_dense(units = layer1_units, activation = activation, input_shape = input_shape) %>% 
+              layer_dense(units = layer2_units, activation = activation) %>%
+              layer_dropout(rate = dropout) %>%
+              layer_dense(units = 1)
+          }
+          if (nlayer == 4) {
+            modelIn = keras_model_sequential() %>%
+              layer_dense(units = layer1_units, activation = activation, input_shape = input_shape) %>% 
+              layer_dense(units = layer2_units, activation = activation) %>%
+              layer_dropout(rate = dropout) %>%
+              layer_dense(units = layer3_units, activation = activation) %>%
+              layer_dense(units = 1)
+          }
+          if (nlayer == 5) {
+            modelIn = keras_model_sequential() %>%
+              layer_dense(units = layer1_units, activation = activation, input_shape = input_shape) %>% 
+              layer_dense(units = layer2_units, activation = activation) %>%
+              layer_dropout(rate = dropout) %>%
+              layer_dense(units = layer3_units, activation = activation) %>%
+              layer_dense(units = layer4_units, activation = activation) %>%
+              layer_dense(units = 1)
+          }
+          if (nlayer == 6) {
+            modelIn = keras_model_sequential() %>%
+              layer_dense(units = layer1_units, activation = activation, input_shape = input_shape) %>% 
+              layer_dense(units = layer2_units, activation = activation) %>%
+              layer_dropout(rate = dropout) %>%
+              layer_dense(units = layer3_units, activation = activation) %>%
+              layer_dense(units = layer4_units, activation = activation) %>%
+              layer_dense(units = layer5_units, activation = activation) %>%
+              layer_dense(units = 1)
+          }
           model = modelIn
         }
         
         model %>% compile(
           loss = "mse",
           #loss = "categorical_crossentropy",
-          optimizer = optimizer_rmsprop(),
+          optimizer = optimizer,
           metrics = list("mean_absolute_error")
         )
         
