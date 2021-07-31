@@ -130,6 +130,7 @@ best_NN_foreach_pheno <- function(activation, env=FALSE, env_and_noEnv=FALSE, is
   colnames(mx) <- c("arg", "phenotype", "-lg(MAE)")
   return(mx)
 }
+# Useful!!!!!!!!!:
 Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRUE) {
   grepword <- paste("NN_", activation, sep = '')
   r_NN <- names(globalenv())[grep(grepword, names(globalenv()))]
@@ -142,7 +143,7 @@ Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRU
       r_x <- r_NN[grep("env", r_NN)]
     }
   }
-  out <- matrix(NA, 1, 3)
+  out <- matrix(NA, 1, 4)
   for (r in r_x) {
     tkb <- Substring_stkb(r, TRUE)
     out <- rbind(out, result_NN(.GlobalEnv[[r]], tkb))
@@ -150,54 +151,52 @@ Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRU
   out <- as.data.frame(out[-1, ])
   #out[, 1] <- factor(out[, 1])
   #out[, 2] <- factor(out[, 2])
-  colnames(out) <- c("arg", "phenotype", "MAE")
+  colnames(out) <- c("arg", "phenotype", "MAE", "Cor")
   rownames(out) <- seq(1:nrow(out))
   out[, 3] <- as.numeric(as.character(out[, 3]))
+  out[, 4] <- as.numeric(as.character(out[, 4]))
   if (is_lg_MAE) {
     out[, 3] <- -log10(out[, 3])
   }
   return(out)
 }
 result_NN <- function(result, tkb) {
-  mx <- matrix(NA, 1, 3)
+  mx <- matrix(NA, 1, 4)
   for (ph in names(result)) {
-    mx <- rbind(mx, cbind(tkb, ph, result[[ph]][["resultMLC"]][, 1]))
+    mx <- rbind(mx, cbind(tkb, ph, result[[ph]][["resultMLC"]][, 1], result[[ph]][["resultMLC"]][, 5]))
   }
-  colnames(mx) <- c("arg", "phenotype", "MAE")
+  colnames(mx) <- c("arg", "phenotype", "MAE", "Cor")
   return(mx[-1, ])
+}
+NN_plot_pre <- function(activation, env, is_lg_MAE=TRUE) {
+  if (env) {
+    envStr <- "G×E"
+  } else {
+    envStr <- "G"
+  }
+  out <- Collect_NN(activation, env, FALSE, is_lg_MAE)
+  out <- cbind(out, paste(c(activation, ', ', envStr), collapse = ""))
+  colnames(out) <- c("arg", "Phenotype", "MAE", "Cor", "Activation_and_Env")
+  return(out)
 }
 #--------------------------- plot_NN -----------------------#
 if (FALSE) {
   library(ggplot2)
-  #
-  NN_plot_elu_noEnv <- Collect_NN("elu", env = FALSE, env_and_noEnv = FALSE, is_lg_MAE = TRUE)
-  NN_plot_elu_noEnv <- cbind(NN_plot_elu_noEnv, "elu, G") #×
-  colnames(NN_plot_elu_noEnv) <- c("arg", "Phenotype", "MAE", "Activation_and_E")
-  #
-  NN_plot_elu_env <- Collect_NN("elu", env = TRUE, env_and_noEnv = FALSE, is_lg_MAE = TRUE)
-  NN_plot_elu_env <- cbind(NN_plot_elu_env, "elu, G×E") #×
-  colnames(NN_plot_elu_env) <- c("arg", "Phenotype", "MAE", "Activation_and_E")
-  #
-  NN_plot_relu_noEnv <- Collect_NN("relu", env = FALSE, env_and_noEnv = FALSE, is_lg_MAE = TRUE)
-  NN_plot_relu_noEnv <- cbind(NN_plot_relu_noEnv, "relu, G") #×
-  colnames(NN_plot_relu_noEnv) <- c("arg", "Phenotype", "MAE", "Activation_and_E")
-  #
-  NN_plot_relu_env <- Collect_NN("relu", env = TRUE, env_and_noEnv = FALSE, is_lg_MAE = TRUE)
-  NN_plot_relu_env <- cbind(NN_plot_relu_env, "relu, G×E") #×
-  colnames(NN_plot_relu_env) <- c("arg", "Phenotype", "MAE", "Activation_and_E")
-  #
-  NN_plot <- rbind(NN_plot_elu_noEnv, NN_plot_elu_env, NN_plot_relu_noEnv, NN_plot_relu_env)
+  NN_plot <- rbind(NN_plot_pre("elu", FALSE), NN_plot_pre("elu", TRUE),
+                   NN_plot_pre("relu", FALSE), NN_plot_pre("relu", TRUE),
+                   NN_plot_pre("linear", FALSE), NN_plot_pre("linear", TRUE),
+                   NN_plot_pre("sigmoid", FALSE), NN_plot_pre("sigmoid", TRUE))
   # 1 better
-  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_E)) + 
+  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_Env)) + 
     xlab("Phenotype") + 
-    ylab("-lg(MAE)") +
+    ylab("-lg(MAE)") + #------------- Or Correlation?
     #geom_rect(aes(xmin=0, xmax=1.5, ymin=-Inf, ymax=Inf), fill='#C0C0C0', alpha = .01) +
     geom_violin() +
     labs(title='NN Prediction') +
     facet_wrap(~arg, nrow=4) + # or nrow=2
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") #panel.grid=element_blank()
   # 2
-  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_E)) + 
+  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_Env)) + 
     #theme_bw() +
     xlab("Phenotype") + 
     ylab("-lg(MAE)") +
