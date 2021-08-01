@@ -56,34 +56,34 @@ Split_into_TrainValidTest_kFold <- function(sample_set, train_perc=0.8, k=10,
   return(data_set)
 }
 
-Split_into_train_test <- function(train_perc, geno, pheno, splmd, envir, seed=NA) {
+Split_into_train_test <- function(train_perc, geno, phen, splm, envi, seed=NA) {
   if (train_perc > 1) {
     train_perc = 1/train_perc
   }
   geno <- as.matrix(geno)
-  pheno <- as.matrix(pheno)
+  phen <- as.matrix(phen)
   num_sample <- nrow(geno)
   if (!is.na(seed)) {
     set.seed(seed)
   }
   train = as.matrix(sample(1:num_sample, round(num_sample * train_perc)))
   geno_train <- geno[train, ]
-  pheno_train <- as.matrix(pheno[train, ])
-  splmd_train <- as.matrix(splmd[train, ])
-  envir_train <- as.matrix(envir[train, ])
-  train_set <- list(geno_train, pheno_train, splmd_train, envir_train)
+  phen_train <- as.matrix(phen[train, ])
+  splm_train <- as.matrix(splm[train, ])
+  envi_train <- as.matrix(envi[train, ])
+  train_set <- list(geno_train, phen_train, splm_train, envi_train)
   if (train_perc == 1) {
-    names(train_set) <- c("geno", "pheno", "splmd", "envir")
+    names(train_set) <- c("geno", "phen", "splm", "envi")
     return(train_set)
   } else {
     test = setdiff(1:num_sample, train)
     geno__test <- geno[test, ]
-    pheno__test <- as.matrix(pheno[test, ])
-    splmd__test <- as.matrix(splmd[test, ])
-    envir__test <- as.matrix(envir[test, ])
-    test__set <- list(geno__test, pheno__test, splmd__test, envir__test)
-    names(train_set) <- c("geno", "pheno", "splmd", "envir")
-    names(test__set) <- c("geno", "pheno", "splmd", "envir")
+    phen__test <- as.matrix(phen[test, ])
+    splm__test <- as.matrix(splm[test, ])
+    envi__test <- as.matrix(envi[test, ])
+    test__set <- list(geno__test, phen__test, splm__test, envi__test)
+    names(train_set) <- c("geno", "phen", "splm", "envi")
+    names(test__set) <- c("geno", "phen", "splm", "envi")
     return(list(train=train_set, test=test__set))
   }
 }
