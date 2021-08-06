@@ -77,9 +77,6 @@ for (ph in p1:pn) {
   
   tmp_in <- foreach(d = seq(1:num_data)) %dopar% {
     load(paste(c('~/gs/rice/_data/', datalist[d], ".RData"), collapse = ""), .GlobalEnv)
-    library(e1071)
-    library(Metrics)
-    library(dplyr)
     num_tt <- length(.GlobalEnv[[datalist[d]]])
     tmp_tt <- list()
     for (tt in 1:num_tt) {
