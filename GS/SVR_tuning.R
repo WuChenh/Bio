@@ -8,8 +8,8 @@ library(foreach)
 library(doParallel)
 
 svr_cv_tune <- function(dataN, tt, ph, 
-                        gamma_range = 2^(-4:4),
-                        cost_range = 2^(-5:8)) {
+                        gamma_range = 2^(-4:3),
+                        cost_range = 2^(-5:4)) {
   library(e1071)
   library(Metrics)
   test_x <- dataN[[tt]][["test"]][["geno"]]
@@ -35,8 +35,8 @@ svr_cv_tune <- function(dataN, tt, ph,
     cor_test <- c(cor_test, cor(predict(best_model, test_x), test_y))
     mae_test <- c(mae_test, mae(predict(best_model, test_x), test_y))
   }
-  which_max_cor <- which(cor_test = max(cor_test))
-  which_min_mae <- which(mae_test = min(mae_test))
+  which_max_cor <- which(cor_test == max(cor_test))
+  which_min_mae <- which(mae_test == min(mae_test))
   return(list(
     cor_test = cor_test,
     cor_max = max(cor_test),
