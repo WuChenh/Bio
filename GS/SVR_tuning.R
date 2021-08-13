@@ -2,7 +2,6 @@
 setwd("~/gs/rice/SVR_tune")
 library(e1071)
 library(Metrics)
-library(dplyr)
 library(parallel)
 library(foreach)
 library(doParallel)
@@ -68,25 +67,29 @@ if (is.na(pn)) {
 
 out <- list()
 for (ph in p1:pn) {
-  cores <- detectCores() - 2
-  if ((num_data * 2) < cores) {
-    cores <- num_data * 2
-  }
+  cores <- num_data
+  print(paste(c("Use ", cores, " cores."), collapse = ""))
   cl <- makeCluster(cores)
   registerDoParallel(cl)
-  
-  tmp_in <- foreach(d = seq(1:num_data)) %dopar% {
+  tmp_in <- foreach(d = seq(1:num_data), .errorhandling = "pass", .verbose = TRUE) %dopar% {
     load(paste(c('~/gs/rice/_data/', datalist[d], ".RData"), collapse = ""), .GlobalEnv)
     num_tt <- length(.GlobalEnv[[datalist[d]]])
     tmp_tt <- list()
     for (tt in 1:num_tt) {
+      #print(paste(c("Tune: ", datalist[d], "tt", tt, "ph", ph), collapse = " "))
       tmp_tt[[tt]] <- svr_cv_tune(.GlobalEnv[[datalist[d]]], tt, ph)
+      #print("Done.")
     }
     #rm(list=names(globalenv())[grep(datalist[d], names(globalenv()))])
-    tmp_in[[d]] <- tmp_tt
+    save(list = c("tmp_tt"), 
+         file = paste(c("~/gs/rice/SVR_tune/SVR_RBF_tune_tt_", as.character(d), ".RData"), collapse = ""), 
+         compress = "xz")
+    #tmp_in[[d]] <- tmp_tt
+    tmp_tt
   }
   stopCluster(cl)
+  print(paste("ph", ph, sep = " "))
   out[[ph]] <- tmp_in
 }
 names(out) <- nam_ph[p1:pn]
-save(list = c("out"), file = "~/gs/rice/SVR_tune/_SVR_RBF_tune.RData", compress = "xz")
+save(list = c("out"), file = "~/gs/rice/SVR_tune/_SVR_RBF_tune_o.RData", compress = "xz")
