@@ -1,24 +1,25 @@
 # Build NN regressor, parallel. 
 # activations : relu | elu | selu | hard_sigmoid | sigmoid | linear | softmax | softplus | softsign | tanh | exponential
 # optimizer: adam | adamax | adadelta | adagrad | nadam | rmsprop 
-Keras_singleTrait_para <- function(feed_set,
-                                   batch_size=256, epochs=200,
-                                   patience=NULL,
-                                   modelIn=NULL,
-                                   activation='relu',
-                                   optimizer='rmsprop', #optimizer_rmsprop(),
-                                   include_env=TRUE,
-                                   usePCinsteadSNP=FALSE,
-                                   isScale=TRUE,
-                                   isScaleSNP=TRUE,
-                                   p1=1, pn=NA,
-                                   dropout=.4,
-                                   nlayer=5,
-                                   layer1_units=512,
-                                   layer2_units=256,
-                                   layer3_units=128,
-                                   layer4_units=64,
-                                   layer5_units=32) {
+Keras_NN_singleTrait <- function(feed_set,
+                                 batch_size=256, epochs=200,
+                                 patience=NULL,
+                                 modelIn=NULL,
+                                 activation='relu',
+                                 optimizer='rmsprop', #optimizer_rmsprop(),
+                                 include_env=TRUE,
+                                 usePCinsteadSNP=FALSE,
+                                 isScale=TRUE,
+                                 isScaleSNP=TRUE,
+                                 p1=1, pn=NA,
+                                 dropout=.3,
+                                 nlayer=5,
+                                 layer1_units=512,
+                                 layer2_units=256,
+                                 layer3_units=128,
+                                 layer4_units=64,
+                                 layer5_units=32,
+                                 weight_snp=NA) {
   library(dplyr)
   library(parallel)
   library(foreach)
@@ -31,8 +32,9 @@ Keras_singleTrait_para <- function(feed_set,
   num_ph <- length(nam_ph)
   if (is.na(pn)) { pn <- num_ph}
   result <- list()
-  for (p in p1:pn) {
-    print("--------- Testing ---------")
+  p <- p1
+  while (p <= pn) {
+    wt_snp <- weight_snp[p,]
     #cores <- detectCores() - 2
     #if (num_tt < cores) { cores = num_tt }
     cl <- makeCluster(10)
@@ -44,6 +46,12 @@ Keras_singleTrait_para <- function(feed_set,
       library(parallel)
       library(foreach)
       library(doParallel)
+      weighted <- function(dataMx, weight_snp) {
+        for (colw in 1:ncol(dataMx)) {
+          dataMx[,colw] <- dataMx[,colw] * weight_snp[colw]
+        }
+        return(dataMx)
+      }
       # Test set
       if(isScale) {
         test__envi = scale(feed_set[[t]][[2]][[4]])
@@ -58,6 +66,11 @@ Keras_singleTrait_para <- function(feed_set,
         } else {
           test__geno = feed_set[[t]][[2]][[1]]
         }
+        ##############
+        if (!is.na(weight_snp)) {
+          test__geno <- weighted(test__geno, wt_snp)
+        }
+        ##############
       } else {
         test__geno = feed_set[[t]][[2]][[3]][,grep("PC", colnames(feed_set[[t]][[2]][[3]]))] %>% as.numeric(as.character())
       }
@@ -71,7 +84,6 @@ Keras_singleTrait_para <- function(feed_set,
       input_shape = ncol(x_test)
       
       # CV
-      print("--------- Testing ---------")
       history_list <- list()
       #train_loss <- c()
       #train_mean_absolute_error <- c()
@@ -81,30 +93,37 @@ Keras_singleTrait_para <- function(feed_set,
       test_prediction <- list()
       #loss_and_metrics_list <- list()
       #scores_list <- c()
-      for (c in 1:num_cv) {
+      cc <- 1
+      while (cc <= num_cv) {
         if(isScale) {
-          train_envi = scale(feed_set[[t]][[1]][[c]][[1]][[4]])
-          train_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][, p]))
-          valid_envi = scale(feed_set[[t]][[1]][[c]][[2]][[4]])
-          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][, p]))
+          train_envi = scale(feed_set[[t]][[1]][[cc]][[1]][[4]])
+          train_phen = scale(as.matrix(feed_set[[t]][[1]][[cc]][[1]][[2]][, p]))
+          valid_envi = scale(feed_set[[t]][[1]][[cc]][[2]][[4]])
+          valid_phen = scale(as.matrix(feed_set[[t]][[1]][[cc]][[2]][[2]][, p]))
         } else {
-          train_envi = feed_set[[t]][[1]][[c]][[1]][[4]]
-          train_phen = as.matrix(feed_set[[t]][[1]][[c]][[1]][[2]][, p])
-          valid_envi = feed_set[[t]][[1]][[c]][[2]][[4]]
-          valid_phen = as.matrix(feed_set[[t]][[1]][[c]][[2]][[2]][, p])
+          train_envi = feed_set[[t]][[1]][[cc]][[1]][[4]]
+          train_phen = as.matrix(feed_set[[t]][[1]][[cc]][[1]][[2]][, p])
+          valid_envi = feed_set[[t]][[1]][[cc]][[2]][[4]]
+          valid_phen = as.matrix(feed_set[[t]][[1]][[cc]][[2]][[2]][, p])
         }
         
         if (!usePCinsteadSNP) {
           if (isScaleSNP) {
-            train_geno = scale(feed_set[[t]][[1]][[c]][[1]][[1]], center = FALSE)
-            valid_geno = scale(feed_set[[t]][[1]][[c]][[2]][[1]], center = FALSE)
+            train_geno = scale(feed_set[[t]][[1]][[cc]][[1]][[1]], center = FALSE)
+            valid_geno = scale(feed_set[[t]][[1]][[cc]][[2]][[1]], center = FALSE)
           } else {
-            train_geno = feed_set[[t]][[1]][[c]][[1]][[1]]
-            valid_geno = feed_set[[t]][[1]][[c]][[2]][[1]]
+            train_geno = feed_set[[t]][[1]][[cc]][[1]][[1]]
+            valid_geno = feed_set[[t]][[1]][[cc]][[2]][[1]]
           }
+          ##############
+          if (!is.na(weight_snp)) {
+            train_geno <- weighted(train_geno, wt_snp)
+            valid_geno <- weighted(valid_geno, wt_snp)
+          }
+          ##############
         } else {
-          train_geno = feed_set[[t]][[1]][[c]][[1]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[c]][[1]][[3]]))] %>% as.numeric(as.character())
-          valid_geno = feed_set[[t]][[1]][[c]][[2]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[c]][[2]][[3]]))] %>% as.numeric(as.character())
+          train_geno = feed_set[[t]][[1]][[cc]][[1]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[cc]][[1]][[3]]))] %>% as.numeric(as.character())
+          valid_geno = feed_set[[t]][[1]][[cc]][[2]][[3]][,grep("PC", colnames(feed_set[[t]][[1]][[cc]][[2]][[3]]))] %>% as.numeric(as.character())
         }
         
         if (include_env) {
@@ -193,7 +212,7 @@ Keras_singleTrait_para <- function(feed_set,
         
         if (!is.null(patience)) {
           early_stop <- callback_early_stopping(monitor = "val_loss", patience = patience)
-          history_list[[c]] <- model %>% fit(
+          history_list[[cc]] <- model %>% fit(
             x_train, y_train,
             batch_size = batch_size,
             epochs = epochs,
@@ -202,7 +221,7 @@ Keras_singleTrait_para <- function(feed_set,
             callbacks = list(early_stop)
           )
         } else {
-          history_list[[c]] <- model %>% fit(
+          history_list[[cc]] <- model %>% fit(
             x_train, y_train,
             batch_size = batch_size,
             epochs = epochs,
@@ -217,9 +236,10 @@ Keras_singleTrait_para <- function(feed_set,
         c(loss, mae) %<-% (model %>% evaluate(x_test, y_test))
         test_loss <- c(test_loss, loss)
         test_mae <- c(test_mae, mae)
-        test_prediction[[c]] <- model %>% predict(x_test)
-        test_cor <- c(test_cor, cor(test_prediction[[c]], y_test))
-        print(paste(c("loss: ", loss, ";  ", "MAE: ", mae, "Cor: ", test_cor[c]), collapse = ""))
+        test_prediction[[cc]] <- model %>% predict(x_test)
+        test_cor <- c(test_cor, cor(test_prediction[[cc]], y_test))
+        print(paste(c("loss: ", loss, ";  ", "MAE: ", mae, "Cor: ", test_cor[cc]), collapse = ""))
+        cc <- cc + 1
       }
       list(history=history_list,
            loss=test_loss,
@@ -246,8 +266,9 @@ Keras_singleTrait_para <- function(feed_set,
                                        loss_mean=(t.test(result_t_mx[, 4], alternative = "two.sided"))$p.value,
                                        Cor_max=(t.test(result_t_mx[, 5], alternative = "two.sided"))$p.value)
     names(tmp_tt) <- c(nam_tt, "resultMLC", "p_value")
-    result[[p]] <- tmp_tt
+    result[[p-p1+1]] <- tmp_tt
+    p <- p + 1
   }
-  names(result) = nam_ph[1:num_ph]
+  names(result) = nam_ph[p1:pn]
   return(result)
 }
