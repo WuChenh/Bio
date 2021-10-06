@@ -34,7 +34,9 @@ Keras_NN_singleTrait <- function(feed_set,
   result <- list()
   p <- p1
   while (p <= pn) {
-    wt_snp <- weight_snp[p,]
+    if (!is.na(weight_snp)) {
+      wt_snp <- weight_snp[p,]
+    }
     #cores <- detectCores() - 2
     #if (num_tt < cores) { cores = num_tt }
     cl <- makeCluster(10)
