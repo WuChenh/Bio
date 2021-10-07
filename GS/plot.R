@@ -6,21 +6,6 @@ source('plot_func.R')
 #xz -9vk --threads=20 rice.origin.RData
 
 #-------------------------- Plot_Subpopulation ------------------------#
-
-# This method is worse.
-if (F) {
-  num_subp_all <- rbind(cbind('NA_was_eliminated', as.character(rice.compl[["splm"]][["Sub.population"]])),
-                        cbind('Complete', as.character(rice.origin[["SD1"]][["Sub.population"]])))
-  colnames(num_subp_all) <- c('Data', 'Subpopulation')
-  num_subp_all <- as.data.frame(num_subp_all)
-  ggplot(num_subp_all, aes(x=Subpopulation, fill=Data)) +
-    geom_bar(position="dodge", width = .5) +
-    labs(title='Count Subpopulations') +
-    theme(legend.position = c(.15, .85),
-          legend.background = element_blank())
-}
-
-# The following method is better!
 num_ratio_subp <- count_subp()
 p1 <- cbind(num_ratio_subp$origin, 'Complete')
 p2 <- cbind(num_ratio_subp$no_NA, 'Removed samples with missing values')
@@ -45,7 +30,6 @@ NN_plot_data <- rbind(NN_plot_pre("elu", FALSE), NN_plot_pre("elu", TRUE),
                       NN_plot_pre("relu", FALSE), NN_plot_pre("relu", TRUE),
                       NN_plot_pre("linear", FALSE), NN_plot_pre("linear", TRUE),
                       NN_plot_pre("sigmoid", FALSE), NN_plot_pre("sigmoid", TRUE))
-# 1 better
 NN_plot <- ggplot(NN_plot_data, aes(x=Phenotype, y=R2, fill=Phenotype, color=Activation_and_Env)) +
   #theme_classic() +
   xlab("Phenotype") + 
