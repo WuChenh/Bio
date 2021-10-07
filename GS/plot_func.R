@@ -1,41 +1,7 @@
-#-------------------------- Plot_Subpopulation ------------------------#
-if (FALSE) {
-  rice.climate <- sampPosi
-  rm(list=names(globalenv())[grep('rice_', names(globalenv()))])
-  save(list=names(globalenv())[grep('rice.', names(globalenv()))], file="rice.origin.RData")
-  #xz -9vk --threads=20 rice.origin.RData
-  # -------------------------- plot subp conut --------------------------#
-  library(ggplot2)
-  # -----------------  This method is worse. ------------------------- #
-  num_subp_all <- rbind(cbind('NA_was_eliminated', as.character(rice.compl[["splm"]][["Sub.population"]])),
-                        cbind('Complete', as.character(rice.origin[["SD1"]][["Sub.population"]])))
-  colnames(num_subp_all) <- c('Data', 'Subpopulation')
-  num_subp_all <- as.data.frame(num_subp_all)
-  ggplot(num_subp_all, aes(x=Subpopulation, fill=Data)) +
-    geom_bar(position="dodge", width = .5) +
-    labs(title='Count Subpopulations') +
-    theme(legend.position = c(.15, .85),
-          legend.background = element_blank())
-  
-  # ------------- The following plot method is better! ------------- #
-  num_ratio_subp <- count_subp()
-  p1 <- cbind(num_ratio_subp$origin, 'Complete')
-  p2 <- cbind(num_ratio_subp$no_NA, 'Removed samples with missing values')
-  colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
-  colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
-  num_ratio_subp <- rbind(p1, p2)
-  rm(p1, p2)
-  #
-  ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, group=Dataset)) +
-    ylim(c(0,110)) +
-    geom_bar(position="dodge", width = .5, stat="identity") +
-    labs(title='Count Subpopulations') +
-    theme(legend.position = c(.22, .85),
-          legend.background = element_blank()) +
-    geom_text(show.legend = FALSE, 
-              aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
-              position=position_dodge2(.6), size=2.6, hjust=.4)
-}
+#plot funcs
+library(ggplot2)
+library(latex2exp)
+
 count_subp <- function() {
   # no NA ----------------------
   num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
@@ -61,8 +27,6 @@ count_subp <- function() {
   out[, 3] <- as.numeric(out[, 3])
   return(list(origin=out, no_NA=out_compl))
 }
-# -------------------------------------------------------------- #
-
 
 Collect_result <- function(is_BGLR=FALSE, is_NN=FALSE, is_rrBLUP=FALSE) {
   q1 <- NULL
@@ -120,17 +84,19 @@ Substring_stkb <- function(vname, is_batch=FALSE, is_k=TRUE) {
 
 # ------------------------------- N N --------------------------------- #
 # The best NN for each phenotype: ##Unavailable! 
-best_NN_foreach_pheno <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRUE) {
-  NN_plot <- Collect_NN(activation, env, env_and_noEnv, is_lg_MAE)
-  tmp <- c()
-  for (p in levels(NN_plot[,2])) {
-    tmp <- c(tmp, which(NN_plot[,3]==max(NN_plot[,3][which(NN_plot[,2]==p)])))
+if (F) {
+  best_NN_foreach_pheno <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRUE) {
+    NN_plot <- Collect_NN(activation, env, env_and_noEnv, is_lg_MAE)
+    tmp <- c()
+    for (p in levels(NN_plot[,2])) {
+      tmp <- c(tmp, which(NN_plot[,3]==max(NN_plot[,3][which(NN_plot[,2]==p)])))
+    }
+    mx <- NN_plot[tmp,]
+    colnames(mx) <- c("arg", "phenotype", "-lg(MAE)")
+    return(mx)
   }
-  mx <- NN_plot[tmp,]
-  colnames(mx) <- c("arg", "phenotype", "-lg(MAE)")
-  return(mx)
 }
-# Useful!!!!!!!!!:
+##----------------------------- Useful!!!!!!!!!: ----------------------------##
 Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRUE) {
   grepword <- paste("NN_", activation, sep = '')
   r_NN <- names(globalenv())[grep(grepword, names(globalenv()))]
@@ -151,7 +117,7 @@ Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRU
   out <- as.data.frame(out[-1, ])
   #out[, 1] <- factor(out[, 1])
   #out[, 2] <- factor(out[, 2])
-  colnames(out) <- c("arg", "phenotype", "MAE", "Cor")
+  colnames(out) <- c("arg", "phenotype", "MAE", "R2")
   rownames(out) <- seq(1:nrow(out))
   out[, 3] <- as.numeric(as.character(out[, 3]))
   out[, 4] <- as.numeric(as.character(out[, 4]))
@@ -160,14 +126,17 @@ Collect_NN <- function(activation, env=FALSE, env_and_noEnv=FALSE, is_lg_MAE=TRU
   }
   return(out)
 }
+
 result_NN <- function(result, tkb) {
   mx <- matrix(NA, 1, 4)
   for (ph in names(result)) {
-    mx <- rbind(mx, cbind(tkb, ph, result[[ph]][["resultMLC"]][, 1], result[[ph]][["resultMLC"]][, 5]))
+    mx <- rbind(mx, cbind(tkb, ph, result[[ph]][["resultMLC"]][, 1],
+                          (result[[ph]][["resultMLC"]][, 5])**2)) ## R-squared
   }
-  colnames(mx) <- c("arg", "phenotype", "MAE", "Cor")
+  colnames(mx) <- c("arg", "phenotype", "MAE", "R2")
   return(mx[-1, ])
 }
+
 NN_plot_pre <- function(activation, env, is_lg_MAE=TRUE) {
   if (env) {
     envStr <- "G×E"
@@ -176,39 +145,9 @@ NN_plot_pre <- function(activation, env, is_lg_MAE=TRUE) {
   }
   out <- Collect_NN(activation, env, FALSE, is_lg_MAE)
   out <- cbind(out, paste(c(activation, ', ', envStr), collapse = ""))
-  colnames(out) <- c("arg", "Phenotype", "MAE", "Cor", "Activation_and_Env")
+  colnames(out) <- c("arg", "Phenotype", "MAE", "R2", "Activation_and_Env")
   return(out)
 }
-#--------------------------- plot_NN -----------------------#
-if (FALSE) {
-  library(ggplot2)
-  NN_plot <- rbind(NN_plot_pre("elu", FALSE), NN_plot_pre("elu", TRUE),
-                   NN_plot_pre("relu", FALSE), NN_plot_pre("relu", TRUE),
-                   NN_plot_pre("linear", FALSE), NN_plot_pre("linear", TRUE),
-                   NN_plot_pre("sigmoid", FALSE), NN_plot_pre("sigmoid", TRUE))
-  # 1 better
-  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_Env)) + 
-    xlab("Phenotype") + 
-    ylab("-lg(MAE)") + #------------- Or Correlation?
-    #geom_rect(aes(xmin=0, xmax=1.5, ymin=-Inf, ymax=Inf), fill='#C0C0C0', alpha = .01) +
-    geom_violin() +
-    labs(title='NN Prediction') +
-    facet_wrap(~arg, nrow=4) + # or nrow=2
-    theme(legend.position = "bottom") #panel.grid=element_blank()
-  # 2
-  ggplot(NN_plot, aes(x=Phenotype, y=MAE, fill=Phenotype, color=Activation_and_Env)) + 
-    #theme_bw() +
-    xlab("Phenotype") + 
-    ylab("-lg(MAE)") +
-    #geom_rect(aes(xmin=0, xmax=1.5, ymin=-Inf, ymax=Inf), fill='#C0C0C0', alpha = .01) +
-    geom_violin() +
-    #stat_summary() +
-    #geom_boxplot() +
-    labs(title='NN Prediction') +
-    facet_grid(arg~.) +
-    theme(legend.position = "bottom")
-}
-
 
 # ------------------------------- BGLR --------------------------------- #
 # Compare subp and not
@@ -274,29 +213,6 @@ result_BGLR <- function(result, stk, is_subp=FALSE) {
   }
 }
 
-#--------------------------- plot_BGLR ------------------------#
-if (FALSE) {
-  rm(BGLR_singleTrait_subp_t0.7k05,
-     BGLR_singleTrait_subp_t0.8k05,
-     BGLR_singleTrait_t0.7k05, 
-     BGLR_singleTrait_t0.8k05)
-  BGLR_subp_plot <- Collect_BGLR(TRUE, TRUE)
-  BGLR_nosubp_plot <- Collect_BGLR(FALSE, TRUE)
-  BGLR_nosubp_plot5col <- cbind(BGLR_nosubp_plot[,1], "N/A", BGLR_nosubp_plot[,2:4])
-  colnames(BGLR_nosubp_plot5col) <- c("arg", "subp", "model", "phenotype", "MAE")
-  BGLR_all_plot <- rbind(BGLR_subp_plot, BGLR_nosubp_plot5col)
-  colnames(BGLR_all_plot) <- c("arg", "Subpopulation", "Model", "Phenotype", "MAE")
-  rm(BGLR_nosubp_plot5col)
-  ggplot(BGLR_all_plot, aes(x=Phenotype, y=MAE, shape=Subpopulation, color=Model)) + #, group=subp)) +
-    geom_point(alpha=0.5, size=1.5) +
-    #geom_line(aes(color=model)) +
-    xlab("Phenotype") + 
-    ylab("-lg(MAE)") +
-    labs(title='BGLR Prediction') +
-    #facet_grid(arg~.)
-    facet_wrap(~arg, nrow = 2)
-}
-
 
 # ------------------------------- rrBLUP --------------------------------#
 # Compare subp and not
@@ -351,39 +267,4 @@ result_rrBLUP <- function(result, st, is_subp=FALSE) {
     colnames(mx) <- c("arg", "Phenotype", "MAE")
     return(mx[-1, ])
   }
-}
-
-# ------------------------------ plot rrBLUP ----------------------------#
-if (FALSE) {
-  rm(rrBLUP_subp_t0.7k05, rrBLUP_subp_t0.8k05, rrBLUP_nosubp_t0.7k05, rrBLUP_nosubp_t0.8k05)
-  #
-  rrBLUP_subp_plot <- Collect_rrBLUP(TRUE, TRUE)
-  rrBLUP_nosubp_plot <- Collect_rrBLUP(FALSE, TRUE)
-  rrBLUP_nosubp_plot4col <- cbind(rrBLUP_nosubp_plot[,1], "N/A", rrBLUP_nosubp_plot[,2:3])
-  colnames(rrBLUP_nosubp_plot4col) <- c("arg", "Subpopulation", "Phenotype", "MAE")
-  rrBLUP_all_plot <- rbind(rrBLUP_subp_plot, rrBLUP_nosubp_plot4col)
-  colnames(rrBLUP_all_plot) <- c("arg", "Subpopulation", "Phenotype", "MAE")
-  rm(rrBLUP_nosubp_plot4col)
-  ggplot(rrBLUP_all_plot, aes(x=Phenotype, y=MAE, color=Subpopulation)) +
-    geom_point(alpha=0.5, size=1.5) +
-    #geom_line(aes(color=model)) +
-    xlab("Phenotype") + 
-    ylab("-lg(MAE)") +
-    labs(title='rrBLUP Prediction') +
-    #facet_grid(arg~.)
-    facet_wrap(~arg, nrow = 2)
-}
-
-
-if (FALSE) {
-  # ----------------------------------- Climate PCA -------------------------- #
-  climate.f <- scale(as.data.frame(rice.compl[["envi"]]))
-  climate.f.pr <- princomp(climate.f, cor = TRUE)
-  climate.f.eigen <- eigen(cor(climate.f))
-  screeplot(climate.f.pr, type = 'lines')
-  biplot(climate.f.pr)
-  #
-  library(psych)
-  fa.parallel(climate.f, fa = "pc", n.iter = 200, show.legend = FALSE)
-  climate.f.pc <- principal(climate.f, nfactors = 5, scores = TRUE)
 }
