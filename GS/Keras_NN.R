@@ -19,7 +19,7 @@ Keras_NN_singleTrait <- function(feed_set,
                                  layer3_units=128,
                                  layer4_units=64,
                                  layer5_units=32,
-                                 weight_snp=NA) {
+                                 weight_snp=NA, Del0SNP=F) {
   library(dplyr)
   library(parallel)
   library(foreach)
@@ -42,13 +42,16 @@ Keras_NN_singleTrait <- function(feed_set,
     cl <- makeCluster(10)
     registerDoParallel(cl)
     tmp_tt <- foreach(t = 1:num_tt) %dopar% {
-      #library(magrittr)
       library(keras)
       library(dplyr)
       library(parallel)
       library(foreach)
       library(doParallel)
-      weighted <- function(dataMx, weight_snp) {
+      weighted <- function(dataMx, weight_snp, Del0SNP=F) {
+        if (Del0SNP) {
+          dataMx <- dataMx[,-which(weight_snp==0)] # Delete SNP with zero effect
+          weight_snp <- weight_snp[-which(weight_snp==0)]
+        }
         for (colw in 1:ncol(dataMx)) {
           dataMx[,colw] <- dataMx[,colw] * weight_snp[colw]
         }
@@ -70,7 +73,7 @@ Keras_NN_singleTrait <- function(feed_set,
         }
         ##############
         if (!is.na(weight_snp)) {
-          test__geno <- weighted(test__geno, wt_snp)
+          test__geno <- weighted(test__geno, wt_snp, Del0SNP)
         }
         ##############
       } else {
@@ -119,8 +122,8 @@ Keras_NN_singleTrait <- function(feed_set,
           }
           ##############
           if (!is.na(weight_snp)) {
-            train_geno <- weighted(train_geno, wt_snp)
-            valid_geno <- weighted(valid_geno, wt_snp)
+            train_geno <- weighted(train_geno, wt_snp, Del0SNP)
+            valid_geno <- weighted(valid_geno, wt_snp, Del0SNP)
           }
           ##############
         } else {
