@@ -5,7 +5,7 @@ Keras_NN_singleTrait <- function(feed_set,
                                  batch_size=256, epochs=200,
                                  patience=NULL,
                                  modelIn=NULL,
-                                 activation='relu',
+                                 activation='sigmoid',
                                  optimizer='rmsprop', #optimizer_rmsprop(),
                                  include_env=TRUE,
                                  usePCinsteadSNP=FALSE,
@@ -42,6 +42,7 @@ Keras_NN_singleTrait <- function(feed_set,
     cl <- makeCluster(10)
     registerDoParallel(cl)
     tmp_tt <- foreach(t = 1:num_tt) %dopar% {
+      #library(magrittr)
       library(keras)
       library(dplyr)
       library(parallel)
@@ -201,6 +202,15 @@ Keras_NN_singleTrait <- function(feed_set,
               layer_dense(units = layer3_units, activation = activation) %>%
               layer_dense(units = layer4_units, activation = activation) %>%
               layer_dense(units = layer5_units, activation = activation) %>%
+              layer_dense(units = 1)
+          }
+          if (nlayer == 999) { #full connected layer No.1
+            modelIn = keras_model_sequential() %>%
+              layer_dense(units = input_shape, activation = 'softmax', input_shape = input_shape) %>%
+              layer_dense(units = 2048, activation = activation) %>%
+              layer_dense(units = 512, activation = activation) %>%
+              layer_dense(units = 128, activation = activation) %>%
+              layer_dense(units = 32, activation = activation) %>%
               layer_dense(units = 1)
           }
           model = modelIn
