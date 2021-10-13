@@ -11,8 +11,8 @@ Keras_NN_singleTrait <- function(feed_set,
                                  usePCinsteadSNP=FALSE,
                                  isScale=TRUE,
                                  isScaleSNP=TRUE,
-                                 p1=1, pn=NA,
-                                 dropout=.3,
+                                 pn=c(1,4), # manual
+                                 dropout=.2,
                                  nlayer=5,
                                  layer1_units=512,
                                  layer2_units=256,
@@ -30,16 +30,18 @@ Keras_NN_singleTrait <- function(feed_set,
   num_tt <- length(feed_set)
   num_cv <- length(feed_set[[1]][[1]])
   num_ph <- length(nam_ph)
-  if (is.na(pn)) { pn <- num_ph}
+  if (is.na(pn)) { pn <- 1:num_ph }
+  
   result <- list()
-  p <- p1
-  while (p <= pn) {
+  pp <- 1
+  while (pp <= length(pn)) {
+    p <- pn[pp]
     if (!is.na(weight_snp)) {
       wt_snp <- weight_snp[p,]
     }
-    #cores <- detectCores() - 2
-    #if (num_tt < cores) { cores = num_tt }
-    cl <- makeCluster(10)
+    cores <- detectCores() - 2
+    if (num_tt < cores) { cores = num_tt }
+    cl <- makeCluster(cores)
     registerDoParallel(cl)
     tmp_tt <- foreach(t = 1:num_tt) %dopar% {
       #library(magrittr)
@@ -253,7 +255,7 @@ Keras_NN_singleTrait <- function(feed_set,
         test_mae <- c(test_mae, mae)
         test_prediction[[cc]] <- model %>% predict(x_test)
         test_cor <- c(test_cor, cor(test_prediction[[cc]], y_test))
-        print(paste(c("loss: ", loss, ";  ", "MAE: ", mae, "Cor: ", test_cor[cc]), collapse = ""))
+        print(paste(c("loss: ", loss, ";  ", "MAE: ", mae, ";  Cor: ", test_cor[cc]), collapse = ""))
         cc <- cc + 1
       }
       list(history=history_list,
@@ -281,9 +283,9 @@ Keras_NN_singleTrait <- function(feed_set,
                                        loss_mean=(t.test(result_t_mx[, 4], alternative = "two.sided"))$p.value,
                                        Cor_max=(t.test(result_t_mx[, 5], alternative = "two.sided"))$p.value)
     names(tmp_tt) <- c(nam_tt, "resultMLC", "p_value")
-    result[[p-p1+1]] <- tmp_tt
-    p <- p + 1
+    result[[pp]] <- tmp_tt
+    pp <- pp + 1
   }
-  names(result) = nam_ph[p1:pn]
+  names(result) = nam_ph[pn]
   return(result)
 }
