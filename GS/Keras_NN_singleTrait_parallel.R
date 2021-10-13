@@ -19,17 +19,16 @@ Keras_NN_singleTrait <- function(feed_set,
                                  layer3_units=128,
                                  layer4_units=64,
                                  layer5_units=32,
-                                 weight_snp=NA, Del0SNP=F) {
+                                 weight_snp=NA, Del0SNP=F, Ntt=seq(1,10)) {
   library(dplyr)
   library(parallel)
   library(foreach)
   library(doParallel)
   
-  #num_cg <- ncol(feed_set$train[[1]]$pheno)
   nam_ph <- colnames(feed_set[[1]][[1]][[1]][[1]][[2]])
-  num_tt <- length(feed_set)
-  num_cv <- length(feed_set[[1]][[1]])
   num_ph <- length(nam_ph)
+  num_tt <- length(Ntt)
+  num_cv <- length(feed_set[[1]][[1]])
   if (is.na(pn)) { pn <- 1:num_ph }
   
   result <- list()
@@ -43,8 +42,8 @@ Keras_NN_singleTrait <- function(feed_set,
     if (num_tt < cores) { cores = num_tt }
     cl <- makeCluster(cores)
     registerDoParallel(cl)
-    tmp_tt <- foreach(t = 1:num_tt) %dopar% {
-      #library(magrittr)
+    tmp_tt <- foreach(tt = 1:num_tt) %dopar% {
+      t <- Ntt[tt]
       library(keras)
       library(dplyr)
       library(parallel)
@@ -87,14 +86,11 @@ Keras_NN_singleTrait <- function(feed_set,
       } else {
         x_test  = as.matrix(test__geno)
       }
-      
       y_test  = as.matrix(test__phen)
       input_shape = ncol(x_test)
       
       # CV
       history_list <- list()
-      #train_loss <- c()
-      #train_mean_absolute_error <- c()
       test_loss <- c()
       test_mae <- c()
       test_cor <- c()
@@ -224,7 +220,6 @@ Keras_NN_singleTrait <- function(feed_set,
           optimizer = optimizer,
           metrics = list("mean_absolute_error")
         )
-        
         model %>% summary()
         
         if (!is.null(patience)) {
@@ -246,10 +241,6 @@ Keras_NN_singleTrait <- function(feed_set,
             validation_data = list(x_valid, y_valid),
           )
         }
-        #scores = model %>% evaluate(x_train, y_train, verbose = 0)
-        #print(scores)
-        #train_loss <- c(train_loss, scores[[1]])
-        #train_mean_absolute_error <- c(train_mean_absolute_error, scores[[2]])
         c(loss, mae) %<-% (model %>% evaluate(x_test, y_test))
         test_loss <- c(test_loss, loss)
         test_mae <- c(test_mae, mae)
@@ -265,17 +256,15 @@ Keras_NN_singleTrait <- function(feed_set,
            test_prediction=list(y_pred=test_prediction, y_test=y_test))
     }
     stopCluster(cl)
-    #save(list=c("tmp_tt"), file = paste(c("tmp_tt_p", p, ".RData"), collapse = ""))
     result_t_mx <- matrix(NA, num_tt, 5,
-                          dimnames = list(seq(1:num_tt), c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_max")))
+                          dimnames = list(Ntt, c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_max")))
     nam_tt <- c()
     for (rtt in 1:num_tt) {
       result_t_mx[rtt, ] <- c(min(tmp_tt[[rtt]][[3]]), mean(tmp_tt[[rtt]][[3]]),
                               min(tmp_tt[[rtt]][[2]]), mean(tmp_tt[[rtt]][[2]]),
                               max(tmp_tt[[rtt]][[4]]))
-      nam_tt <- c(nam_tt, paste("random_tt_", rtt, sep = ""))
+      nam_tt <- c(nam_tt, paste("random_tt_", Ntt[rtt], sep = ""))
     }
-    #nam_tt <- names(tmp_tt)
     tmp_tt[[length(tmp_tt)+1]] <- result_t_mx
     tmp_tt[[length(tmp_tt)+1]] <- list(MAE_min=(t.test(result_t_mx[, 1], alternative = "two.sided"))$p.value,
                                        MAE_mean=(t.test(result_t_mx[, 2], alternative = "two.sided"))$p.value,
