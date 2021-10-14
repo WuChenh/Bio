@@ -87,32 +87,38 @@ set_weight_2L <- function(wt_vec, wt1=.2, wt2=0,
   }
   return(wt_vec)
 }
-
-get_weight_std <- function(datain, set_wt_step=2, # or 1
-                           wt1=.2, quantile_1=.9,
-                           wt2=0, quantile_2=.3, Nresult=seq(1,10)) {
-  if (set_wt_step>1) {
-    out <- std01(set_weight_2L(mean_weight_bglr(datain, Nresult), 
-                               wt1, wt2, quantile_1, quantile_2))
+get_weight_std <- function(datain, reweight=F, Nresult=seq(1,10), wt_step=2, # or 1
+                           wt1=.2, quantile_1=.9, wt2=0, quantile_2=.3) {
+  if (wt_step>1) {
+    if (!reweight) {
+      out <- mean_weight_bglr(datain, Nresult)
+    } else {
+      out <- set_weight_2L(mean_weight_bglr(datain, Nresult), 
+                           wt1, wt2, quantile_1, quantile_2)
+    }
   } else {
-    out <- std01(set_weight(mean_weight_bglr(datain, Nresult),
-                            wt1, quantile_1))
+    if (!reweight) {
+      out <- mean_weight_bglr(datain, Nresult)
+    } else {
+      out <- set_weight(mean_weight_bglr(datain, Nresult),
+                        wt1, quantile_1)
+    }
   }
-  return(out)
+  return(std01(out))
 }
 
-best_mean_wt <- function(dataIn, Nresult=seq(1,10), wt_step=2,
+best_mean_wt <- function(dataIn, reweight=F, Nresult=seq(1,10), wt_step=2,
                          wt1=.2, quantile_1=.9, wt2=0, quantile_2=.3) {
   best <- find_best_bayesian(dataIn, Nresult)
   traits <- names(dataIn)
   tra <- 1
   while (tra <= length(traits)) {
     if (tra==1) {
-      out <- get_weight_std(dataIn[[tra]][[best[tra]]][['result']], wt_step,
-                            wt1, quantile_1, wt2, quantile_2, Nresult)
+      out <- get_weight_std(dataIn[[tra]][[best[tra]]][['result']], reweight, Nresult,
+                            wt_step, wt1, quantile_1, wt2, quantile_2)
     } else {
-      out <- rbind(out, get_weight_std(dataIn[[tra]][[best[tra]]][['result']], wt_step,
-                                       wt1, quantile_1, wt2, quantile_2, Nresult))
+      out <- rbind(out, get_weight_std(dataIn[[tra]][[best[tra]]][['result']], reweight, Nresult,
+                                       wt_step, wt1, quantile_1, wt2, quantile_2))
     }
     tra <- tra+1
   }
