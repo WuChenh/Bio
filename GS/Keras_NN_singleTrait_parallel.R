@@ -35,9 +35,6 @@ Keras_NN_singleTrait <- function(feed_set,
   pp <- 1
   while (pp <= length(pn)) {
     p <- pn[pp]
-    if (!is.na(weight_snp)) {
-      wt_snp <- weight_snp[p,]
-    }
     cores <- detectCores() - 2
     if (num_tt < cores) { cores = num_tt }
     cl <- makeCluster(cores)
@@ -49,6 +46,9 @@ Keras_NN_singleTrait <- function(feed_set,
       library(parallel)
       library(foreach)
       library(doParallel)
+      if (!is.na(weight_snp)) {
+        wt_snp <- weight_snp[[tt]][p,]
+      }
       weighted <- function(dataMx, weight_snp, Del0SNP=F) {
         if (Del0SNP) {
           dataMx <- dataMx[,-which(weight_snp==0)] # Delete SNP with zero effect
