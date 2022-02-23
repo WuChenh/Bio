@@ -18,7 +18,6 @@ Keras_NN_singleTrait <- function(feed_set,
   library(parallel)
   library(foreach)
   library(doParallel)
-  
   nam_ph <- colnames(feed_set[[1]][[1]][[1]][[1]][[2]])
   num_ph <- length(nam_ph)
   num_tt <- length(Ntt)
@@ -44,7 +43,6 @@ Keras_NN_singleTrait <- function(feed_set,
              weight_snp, Del0SNP)
     }
     stopCluster(cl)
-    
     result_t_mx <- matrix(NA, num_tt, 5,
                           dimnames = list(Ntt, c("MAE_min","MAE_mean","loss_min","loss_mean","Cor_max")))
     nam_tt <- c()
