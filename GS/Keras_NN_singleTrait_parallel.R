@@ -33,7 +33,7 @@ Keras_NN_singleTrait <- function(feed_set,
     registerDoParallel(cl)
     tmp_tt <- foreach(tt = 1:num_tt) %dopar% {
       tx <- Ntt[tt]
-      source('~/gs/rice/Keras_NN_singleTrait_faster.R')
+      source('Keras_NN_singleTrait_parallel.R')
       NN_ttX(tx, p, feed_set, batch_size, epochs,
              patience, modelIn,
              activation, optimizer,
