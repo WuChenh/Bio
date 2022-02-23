@@ -1,3 +1,10 @@
+library(rrBLUP)
+library(mltools)
+library(Metrics)
+library(parallel)
+library(foreach)
+library(doParallel)
+
 rrBLUP_pipe <- function(dataSet, isCluster=FALSE, para=FALSE) {
   if (para) {
     rrBLUP_for_pheno <- rrBLUP_for_ph_para
@@ -23,10 +30,18 @@ rrBLUP_pipe <- function(dataSet, isCluster=FALSE, para=FALSE) {
   return(result)
 }
 
+rrBLUP_train2test <- function(train, test) {
+  pred_mod <- mixed.solve(train[[2]], train[[1]], SE=TRUE)
+  pred <- (test[[1]] %*% as.matrix(pred_mod$u))[, 1] + as.numeric(pred_mod$beta)
+  pCor <- cor(pred, test[[2]])
+  pMSE <- mse(pred, test[[2]])
+  pMAE <- mae(pred, test[[2]])
+  p_value <- t.test(pred, test[[2]], var.equal = TRUE)$p.value
+  return(list(p_value=p_value, MSE=pMSE, MAE=pMAE, Cor=pCor,
+              y_pred=pred, y=test[[2]], x_test=test[[1]], mod=pred_mod))
+}
+
 rrBLUP_for_ph_para <- function(dataSet, isCluster=TRUE, cls=NA) {
-  library(parallel)
-  library(foreach)
-  library(doParallel)
   data_pre <- rrBLUP_data_pre(dataSet, isCluster, cls)
   num_tt = data_pre[[1]]
   num_ph = data_pre[[2]]
@@ -38,7 +53,7 @@ rrBLUP_for_ph_para <- function(dataSet, isCluster=TRUE, cls=NA) {
   clt = makeCluster(cores)
   registerDoParallel(clt)
   result_ph <- foreach(ph = 1:num_ph) %dopar% {
-    source('~/gs/rice/rrBLUP_train2test.R')
+    source('rrBLUP_pipe.R')
     result_ph[[ph]] <- rrBLUP_for_t_num_tt(trainValidTest_pre, num_tt, ph)
   }
   stopCluster(clt)
@@ -48,7 +63,7 @@ rrBLUP_for_ph_para <- function(dataSet, isCluster=TRUE, cls=NA) {
 }
 
 rrBLUP_for_ph <- function(dataSet, isCluster=TRUE, cls=NA) {
-  source('~/gs/rice/rrBLUP_train2test.R')
+  source('rrBLUP_pipe.R')
   data_pre <- rrBLUP_data_pre(dataSet, isCluster, cls)
   num_tt = data_pre[[1]]
   num_ph = data_pre[[2]]
