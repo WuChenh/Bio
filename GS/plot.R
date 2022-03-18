@@ -24,6 +24,40 @@ subp_plot <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, 
             aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
             position=position_dodge2(.6), size=2.6, hjust=.4)
 
+#-------------------------- Plot geo map ------------------------#
+#load("~/rice.origin.RData")
+map_posi <- rice.compl$splm[,1:8]
+map_posi[,6] <- map_posi[,6] |> as.character() |> as.numeric()
+map_posi[,7] <- map_posi[,7] |> as.character() |> as.numeric()
+map_posi[,8] <- map_posi[,8] |> as.character()
+colnames(map_posi)[8] <- "Subpopulation"
+#
+library(ggplot2)
+library(ggmap)
+library(sp)
+library(maptools)
+library(maps)
+#
+mp <- NULL
+mapworld <- borders("world", colour="gray75", fill="gray75")
+mp <- ggplot(map_posi) +
+  mapworld + #ylim(-60,90) +
+  geom_point(aes(x=Longitude, y=Latitude), color="white", size=1.6) +
+  geom_point(aes(x=Longitude, y=Latitude, color=Subpopulation), size=1.5, alpha=.4) +
+  geom_point(aes(x=Longitude, y=Latitude), shape=1, size=1.6) +
+  #xlab("Longitude") + ylab("Latitude") +
+  theme_bw() +
+  theme(legend.position=c(.07, .2), panel.grid=element_blank(),
+        legend.background=element_blank(), axis.title=element_blank()) + #NoAxisTitles
+  scale_x_continuous(breaks=c(-180,-120,-60,0,60,120,180),
+                     expand=expansion(mult=c(0,0), add=c(-50,0)),
+                     labels=c('180°', "120° W", "60° W", "0°", "60° E", "120° E", "180°")) +
+  scale_y_continuous(breaks=c(-60,-30,0,30,60,90), limits=c(-60, 90),
+                     expand=expansion(mult=c(0,0), add=c(-10,-27)),
+                     labels=c("60° S", "30° S", "0°", "30° N", "60° N", "90° N"))
+#mp
+# output 900x450
+
 
 #--------------------------- Plot NN --------------------------------#
 NN_plot_data <- rbind(NN_plot_pre("elu", FALSE), NN_plot_pre("elu", TRUE),
