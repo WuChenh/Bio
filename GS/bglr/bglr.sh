@@ -1,10 +1,24 @@
 #!/bin/bash
 #$ -S /bin/bash
-#$ -N _bglr
+#$ -N z_bglr
 #$ -j y
 #$ -cwd
-#$ -pe mpi 10
-
+#$ -pe mpi 12
+mkdir rslt
 source /opt/miniconda3/bin/activate
 conda activate genomelab
-Rscript bglr.qsub.R
+# trait = argv[1]
+# k = argv[2]
+Rscript bglr.qsub.R 1 10 &
+Rscript bglr.qsub.R 1 5
+Rscript bglr.qsub.R 2 10
+Rscript bglr.qsub.R 2 5
+Rscript bglr.qsub.R 3 10
+Rscript bglr.qsub.R 3 5
+Rscript bglr.qsub.R 4 10 &
+Rscript bglr.qsub.R 4 5
+Rscript bglr.qsub.R 5 10
+Rscript bglr.qsub.R 5 5
+Rscript bglr.qsub.R 6 10
+Rscript bglr.qsub.R 6 5
+wait

@@ -15,7 +15,7 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
   print(paste0('cores: ', cores))##############
   cl <- makeCluster(cores) #type = "SOCK"|"FORK"
   registerDoParallel(cl)
-  rep.all <- foreach(rpn = 1:rep.k, .export='func', .verbose=T) %dopar% {
+  rep.all <- foreach(rpn = 1:rep.k, .export='func', .verbose=F) %dopar% {
     #source('~/KFold_CV.R')
     kn <- 1
     kn.all <- list()
@@ -29,7 +29,12 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
       p.val <- dataO[[2]][val, trait]
       #e.trn <- dataO[[4]][trn, ]
       #e.val <- dataO[[4]][val, ]
-      kn.all[[kn]] <- func(g.trn, p.trn, g.val, p.val)
+      if (algo.fn=='bglr.pipe') {
+        saveAt <- paste0('z_tra', trait, '_k', k, '_rn', rpn, '_kn', kn)
+        kn.all[[kn]] <- func(g.trn, p.trn, g.val, p.val, saveAt)
+      } else {
+        kn.all[[kn]] <- func(g.trn, p.trn, g.val, p.val, trait)
+      }
       kn <- kn+1
     }
     kn.all
