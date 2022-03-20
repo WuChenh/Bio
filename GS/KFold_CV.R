@@ -15,12 +15,12 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
   print(paste0('cores: ', cores))##############
   cl <- makeCluster(cores) #type = "SOCK"|"FORK"
   registerDoParallel(cl)
-  rep.all <- foreach(rpn = 1:rep.k, .export='func', .verbose=F) %dopar% {
+  #rep.all <- foreach(rpn = 1:rep.k, .export='func', .verbose=F) %dopar% {
+  rep.all <- foreach(rpn = 1:rep.k) %dopar% {
     #source('~/KFold_CV.R')
     kn <- 1
     kn.all <- list()
-    while (kn <= 10) {
-      #print(paste(c('rep:', rpn, '-----  kn:', kn)))##########
+    while (kn <= k) {
       trn <- kcv[[rpn]][[kn]][["trn"]]
       val <- kcv[[rpn]][[kn]][["val"]]
       g.trn <- dataO[[1]][trn,]
