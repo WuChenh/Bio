@@ -22,18 +22,18 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
     kn.all <- list()
     while (kn <= k) {
       trn <- kcv[[rpn]][[kn]][["trn"]]
-      val <- kcv[[rpn]][[kn]][["val"]]
+      tst <- kcv[[rpn]][[kn]][["tst"]]
       g.trn <- dataO[[1]][trn,]
-      g.val <- dataO[[1]][val,]
+      g.tst <- dataO[[1]][tst,]
       p.trn <- dataO[[2]][trn, trait]
-      p.val <- dataO[[2]][val, trait]
+      p.tst <- dataO[[2]][tst, trait]
       #e.trn <- dataO[[4]][trn, ]
-      #e.val <- dataO[[4]][val, ]
+      #e.tst <- dataO[[4]][tst, ]
       if (algo.fn=='bglr.pipe') {
         saveAt <- paste0('z_tra', trait, '_k', k, '_rn', rpn, '_kn', kn)
-        kn.all[[kn]] <- func(g.trn, p.trn, g.val, p.val, saveAt)
+        kn.all[[kn]] <- func(g.trn, p.trn, g.tst, p.tst, saveAt)
       } else {
-        kn.all[[kn]] <- func(g.trn, p.trn, g.val, p.val, trait)
+        kn.all[[kn]] <- func(g.trn, p.trn, g.tst, p.tst)
       }
       kn <- kn+1
     }
@@ -49,21 +49,21 @@ KFoldCV.id <- function(num.samp, k=10, rep.k=10, seed.rep=seq(101,110)) {
   out <- list()
   while (rn <= rep.k) {
     set.seed(seed.rep[rn])
-    trnVal.chaos <- sample(1:num.samp, num.samp)
-    trnVal <- list()
+    trntst.chaos <- sample(1:num.samp, num.samp)
+    trntst <- list()
     len <- round(num.samp/k)
     begin <- 1
     for (kn in 1:k) {
       endn <- begin + len -1
-      val <- trnVal.chaos[begin:endn]
+      tst <- trntst.chaos[begin:endn]
       if (kn==k) {
-        val <- trnVal.chaos[begin:num.samp]
+        tst <- trntst.chaos[begin:num.samp]
       }
-      trn <- as.matrix(setdiff(1:num.samp, val))
-      trnVal[[kn]] <- list(trn=trn, val=as.matrix(val))
+      trn <- as.matrix(setdiff(1:num.samp, tst))
+      trntst[[kn]] <- list(trn=trn, tst=as.matrix(tst))
       begin <- endn +1
     }
-    out[[rn]] <- trnVal
+    out[[rn]] <- trntst
     rn <- rn+1
   }
   return(out)
@@ -78,25 +78,25 @@ if (F) {
       set.seed(seed.rep[rn])
       tst.m <- sample(1:num.samp, num.tst)
       set.seed(seed.rep[rn])
-      trnVal.chaos <- sample(setdiff(1:num.samp, tst.m), num.samp-num.tst)
-      ###-------------- trn and val --------------###
-      trnVal <- list()
+      trntst.chaos <- sample(setdiff(1:num.samp, tst.m), num.samp-num.tst)
+      ###-------------- trn and tst --------------###
+      trntst <- list()
       len <- round((num.samp-num.tst)/k)
       begin <- 1
       for (kn in 1:k) {
         endn <- begin + len -1
-        val <- trnVal.chaos[begin:endn]
+        tst <- trntst.chaos[begin:endn]
         if (kn==k) {
-          val <- trnVal.chaos[begin:(num.samp-num.tst)]
+          tst <- trntst.chaos[begin:(num.samp-num.tst)]
         }
-        trn <- as.matrix(setdiff(1:(num.samp-num.tst), val))
-        trnVal[[kn]] <- list(trn=trn, val=as.matrix(val))
+        trn <- as.matrix(setdiff(1:(num.samp-num.tst), tst))
+        trntst[[kn]] <- list(trn=trn, tst=as.matrix(tst))
         #print(paste(c('-----rn: ', rn, 'kn: ', kn)))
-        #print(paste(c(begin, endn, length(val))))
+        #print(paste(c(begin, endn, length(tst))))
         begin <- endn +1
       }
       ###
-      out[[rn]] <- list(tst=as.matrix(tst.m), trnVal=trnVal)
+      out[[rn]] <- list(tst=as.matrix(tst.m), trntst=trntst)
       rn <- rn+1
     }
     return(out)

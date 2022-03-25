@@ -3,7 +3,7 @@ library(mltools)
 library(Metrics)
 
 #BGLR_per_md
-bglr.pipe <- function(x_trn, y_trn, x_val, y_val, saveAt='z',
+bglr.pipe <- function(x_trn, y_trn, x_tst, y_tst, saveAt='z',
                       md_lst=c("BRR","BayesA","BL","BayesB","BayesC"),
                       nIter=12000, burnIn=2000) {
   source('bglr.pipe.R') ######
@@ -15,7 +15,7 @@ bglr.pipe <- function(x_trn, y_trn, x_val, y_val, saveAt='z',
     saveAt0 <- paste0("~/bglr/rslt/", saveAt, '_md', md, '_')
     BGLR_out <- BGLR_pipe(x_trn, y_trn,
                           md_lst[md], nIter, burnIn, saveAt0,
-                          x_val, y_val)
+                          x_tst, y_tst)
     result_mx[md, 1] <- BGLR_out[["cor_tst"]]
     result_mx[md, 2] <- BGLR_out[["mse_tst"]]
     result_mx[md, 3] <- BGLR_out[["mae_tst"]]
