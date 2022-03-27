@@ -1,23 +1,22 @@
 #KFoldCV
-library(foreach)
-library(doParallel)
 
 KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
                     k=10, rep.k=10, seed.rep=seq(101,110)) {
+  library(foreach)
+  library(doParallel)
   source(paste0(algo.fn, '.R'))
   func <- .GlobalEnv[[algo.fn]]
   num.sam <- nrow(dataO[[1]])
-  print(paste0('number of samples: ', num.sam))#################
+  print(paste0('number of samples: ', num.sam)) ##-------------------
   kcv <- KFoldCV.id(num.sam, k, rep.k, seed.rep)
   # Parallel begin
   cores <- detectCores() - 2
   if (rep.k < cores) { cores <- rep.k }
-  print(paste0('cores: ', cores))##############
+  print(paste0('cores: ', cores)) ##-----------------------
   cl <- makeCluster(cores) #type = "SOCK"|"FORK"
   registerDoParallel(cl)
   #rep.all <- foreach(rpn = 1:rep.k, .export='func', .verbose=F) %dopar% {
   rep.all <- foreach(rpn = 1:rep.k) %dopar% {
-    #source('~/KFold_CV.R')
     kn <- 1
     kn.all <- list()
     while (kn <= k) {
@@ -41,6 +40,39 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
   }
   stopCluster(cl)
   # Parallel end
+  return(rep.all)
+}
+
+KFoldCV.slow <- function(dataO, trait=1, algo.fn="bglr.pipe",
+                         k=10, rep.k=10, seed.rep=seq(101,110)) {
+  source(paste0(algo.fn, '.R'))
+  func <- .GlobalEnv[[algo.fn]]
+  num.sam <- nrow(dataO[[1]])
+  print(paste0('number of samples: ', num.sam)) ##-------------------
+  kcv <- KFoldCV.id(num.sam, k, rep.k, seed.rep)
+  rep.all <- list()
+  for (rpn in 1:rep.k) {
+    kn <- 1
+    kn.all <- list()
+    while (kn <= k) {
+      trn <- kcv[[rpn]][[kn]][["trn"]]
+      tst <- kcv[[rpn]][[kn]][["tst"]]
+      g.trn <- dataO[[1]][trn,]
+      g.tst <- dataO[[1]][tst,]
+      p.trn <- dataO[[2]][trn, trait]
+      p.tst <- dataO[[2]][tst, trait]
+      #e.trn <- dataO[[4]][trn, ]
+      #e.tst <- dataO[[4]][tst, ]
+      if (algo.fn=='bglr.pipe') {
+        saveAt <- paste0('z_tra', trait, '_k', k, '_rn', rpn, '_kn', kn)
+        kn.all[[kn]] <- func(g.trn, p.trn, g.tst, p.tst, saveAt)
+      } else {
+        kn.all[[kn]] <- func(g.trn, p.trn, g.tst, p.tst)
+      }
+      kn <- kn+1
+    }
+    rep.all[[rpn]] <- kn.all
+  }
   return(rep.all)
 }
 
