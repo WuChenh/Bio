@@ -3,7 +3,7 @@
 #$ -N z_rrblup
 #$ -j y
 #$ -cwd
-#$ -pe mpi 12
+#$ -pe mpi 6
 source /opt/miniconda3/bin/activate
 conda activate genomelab
 # trait = argv[1]
