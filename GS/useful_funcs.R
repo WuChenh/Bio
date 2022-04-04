@@ -1,5 +1,12 @@
 # little functions
 
+reg_trait <- function(varName) {
+  reg_tr <- regexec("tra[0-9]", varName)
+  trait <- substring(varName, reg_tr[[1]][1], (reg_tr[[1]][1] + attributes(reg_tr[[1]])[[1]] - 1))
+  traitN <- as.numeric(gsub('tra', '', trait))
+  return(traitN)
+}
+
 rename_var <- function(varName) {
   out <- .GlobalEnv[[varName]]
   rm(list=names(globalenv())[which(names(globalenv())==varName)],
@@ -33,7 +40,7 @@ save.image_multiThreads <- function(fname, threads=20) {
 }
 save_mT_grep <- function(grepW, threads=20) {
   for (vn in names(globalenv())[grep(grepW, names(globalenv()))]) {
-    save_multiThreads(vn, threads)
+    save_multiThreads(vn, vn, threads)
   }
 }
 

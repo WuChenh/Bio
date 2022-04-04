@@ -10,7 +10,7 @@ bglr.pipe <- function(x_trn, y_trn, x_tst, y_tst, saveAt='z',
   num_md <- length(md_lst)
   tmp_md <- list()
   result_mx <- matrix(NA, num_md, 4,
-                      dimnames = list(md_lst, c("cor","mse","mae","p_value")))
+                      dimnames = list(md_lst, c("corr","mse","mae","p_value")))
   for (md in 1:num_md) {
     saveAt0 <- paste0("~/bglr/rslt/", saveAt, '_md', md, '_')
     BGLR_out <- BGLR_pipe(x_trn, y_trn,
