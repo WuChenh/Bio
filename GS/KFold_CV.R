@@ -44,7 +44,7 @@ KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
 }
 
 KFoldCV.slow <- function(dataO, trait=1, algo.fn="bglr.pipe",
-                         k=10, rep.k=10, seed.rep=seq(101,110)) {
+                         k=10, rep.k=30, seed.rep=seq(101,130)) {
   source(paste0(algo.fn, '.R'))
   func <- .GlobalEnv[[algo.fn]]
   num.sam <- nrow(dataO[[1]])
@@ -76,7 +76,7 @@ KFoldCV.slow <- function(dataO, trait=1, algo.fn="bglr.pipe",
   return(rep.all)
 }
 
-KFoldCV.id <- function(num.samp, k=10, rep.k=10, seed.rep=seq(101,110)) {
+KFoldCV.id <- function(num.samp, k=10, rep.k=30, seed.rep=seq(101,130)) {
   rn <- 1
   out <- list()
   while (rn <= rep.k) {
