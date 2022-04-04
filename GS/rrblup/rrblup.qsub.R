@@ -20,7 +20,7 @@ print(time_end - time_begin)
 print(noquote('----------------------------------------'))
 
 variable_name <- paste0('r.rrblup.tra', argv[1], '.k', argv[2])
-save_name <- paste0(variable_name, ".RData")
+save_name <- variable_name
 names(tmp_list) <- c(variable_name)
 list2env(tmp_list, .GlobalEnv)
 #save(list=c(variable_name), file = save_name)

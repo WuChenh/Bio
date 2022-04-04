@@ -1,7 +1,7 @@
 #KFoldCV
 
 KFoldCV <- function(dataO, trait=1, algo.fn="bglr.pipe",
-                    k=10, rep.k=10, seed.rep=seq(101,110)) {
+                    k=10, rep.k=30, seed.rep=seq(101,130)) {
   library(foreach)
   library(doParallel)
   source(paste0(algo.fn, '.R'))
