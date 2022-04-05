@@ -8,7 +8,7 @@ load("~/rice.origin.RData")
 ############################## Plot Subpopulation #############################
 num_ratio_subp <- count_subp()
 p1 <- cbind(num_ratio_subp$origin, 'Original')
-p2 <- cbind(num_ratio_subp$no_NA, 'Missing values removed')
+p2 <- cbind(num_ratio_subp$no_NA, 'With missing values removed')
 colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
 colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
 num_ratio_subp <- rbind(p1, p2)
@@ -19,7 +19,7 @@ plot_subp <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, 
   geom_bar(position="dodge", width = .5, stat="identity") +
   #labs(title='Count Subpopulations') +
   theme_bw() +
-  theme(legend.position = c(.22, .85),
+  theme(legend.position = c(.17, .85),
         legend.background = element_blank(), panel.grid=element_blank()) +
   geom_text(show.legend = FALSE, 
             aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
