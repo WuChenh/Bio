@@ -1,6 +1,6 @@
 #data preparation for plot
 
-########################## COUNT SUBP ########################
+############################### COUNT SUBP ###############################
 count_subp <- function() {
   # no NA ----------------------
   num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
@@ -102,3 +102,37 @@ rslt.collect.rrblup <- function(dir_rslt='~/rrblup/', grepW='r.rrb', trait_list)
 }
 rslt.rep30.rrblup <- rslt.collect.rrblup(trait_list = trait_list)
 save_mT_grep('rslt.rep30.rrblup')
+
+
+################################## BEST ###################################
+# Compare mean/median corr of 30 repeats
+library(foreach)
+load("~/rice.origin.RData")
+trait_list <- colnames(rice.compl$phen)
+#rslt.rep30.rrblup[which(rslt.rep30.rrblup$corr==max(rslt.rep30.rrblup$corr)),]
+rslt.best.X <- function(rsltX, mean_OR_median='mean') {
+  out <- foreach (tr = trait_list, .combine = 'rbind') %do% {
+    pkl <- rsltX[which(rsltX$trait==tr), ]
+    pkl.k5 <- pkl[which(pkl$k==5), 1:3]
+    pkl.k10 <- pkl[which(pkl$k==10), 1:3]
+    if (mean_OR_median=='mean') {
+      if (sum(pkl.k5[,1]) >= sum(pkl.k10[,1])) { bstK <- 5 } else { bstK <- 10 }
+      outl <- c(mean(pkl[which(pkl$k==bstK), 1]), mean(pkl[which(pkl$k==bstK), 2]),
+                mean(pkl[which(pkl$k==bstK), 3]), tr, bstK)
+    } else {
+      if (median(pkl.k5[,1]) >= median(pkl.k10[,1])) { bstK <- 5 } else { bstK <- 10 }
+      outl <- c(median(pkl[which(pkl$k==bstK), 1]), median(pkl[which(pkl$k==bstK), 2]),
+                median(pkl[which(pkl$k==bstK), 3]), tr, bstK)
+    }
+    outl
+  }
+  colnames(out) <- c('corr', 'mse', 'mae', 'trait', 'k')
+  rownames(out) <- NULL
+  out <- as.data.frame(out)
+  for (colu in 1:3) {out[[colu]] <- as.numeric(out[[colu]])}
+  for (colu in 4:5) {out[[colu]] <- as.factor(out[[colu]])}
+  return(out)
+}
+#
+rslt.bst.rrblup <- rslt.best.X(rslt.rep30.rrblup)
+rslt.bst.bglr <- rslt.best.X(rslt.rep30.bglr)
