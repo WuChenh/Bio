@@ -1,11 +1,11 @@
-#plot
-source('plot_func.R')
-#rice.climate <- sampPosi
-#rm(list=names(globalenv())[grep('rice_', names(globalenv()))])
-#save(list=names(globalenv())[grep('rice.', names(globalenv()))], file="rice.origin.RData")
+# PLOT #
 #xz -9vk --threads=20 rice.origin.RData
+#
+library(ggplot2)
+source("~/geom_split_violin.R")
+load("~/rice.origin.RData")
 
-#-------------------------- Plot_Subpopulation ------------------------#
+############################## Plot Subpopulation #############################
 num_ratio_subp <- count_subp()
 p1 <- cbind(num_ratio_subp$origin, 'Complete')
 p2 <- cbind(num_ratio_subp$no_NA, 'Removed samples with missing values')
@@ -24,20 +24,16 @@ subp_plot <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, 
             aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
             position=position_dodge2(.6), size=2.6, hjust=.4)
 
-#-------------------------- Plot geo map ------------------------#
-#load("~/rice.origin.RData")
+############################### PLOT MAP ###############################
+library(ggmap)
+library(sp)
+library(maptools)
+library(maps)
 map_posi <- rice.compl$splm[,1:8]
 map_posi[,6] <- map_posi[,6] |> as.character() |> as.numeric()
 map_posi[,7] <- map_posi[,7] |> as.character() |> as.numeric()
 map_posi[,8] <- map_posi[,8] |> as.character()
 colnames(map_posi)[8] <- "Subpopulation"
-#
-library(ggplot2)
-library(ggmap)
-library(sp)
-library(maptools)
-library(maps)
-#
 mp <- NULL
 mapworld <- borders("world", colour="gray75", fill="gray75")
 plot_mp <- ggplot(map_posi) +
@@ -57,22 +53,29 @@ plot_mp <- ggplot(map_posi) +
                      labels=c("60° S", "30° S", "0°", "30° N", "60° N", "90° N"))
 # output 900x450
 
-################## PLOT BGLR ###################
-load("~/rslt.bglr.RData")
+################################# PLOT BGLR ###################################
+load("~/rslt.rep30.bglr.RData")
+#bglr by chr
 
 #plot1: compare k
-plot1 <- ggplot(rslt.bglr, aes(x=bayes, y=corr, fill=k)) +
+plot_bglr <- ggplot(rslt.rep30.bglr, aes(x=bayes, y=corr, fill=k)) +
   xlab('Bayes') +
   ylab('Correlation') +
-  geom_violin() +
-  facet_wrap(~trait, nrow = 2)
+  geom_split_violin(color=NA) +
+  facet_wrap(~trait, nrow=2)
 #Rplot_bglr_k 900x400
 
-
-################## PLOT RR-BLUP ######################
-load("~/rslt.rrblup.RData")
-plot2 <- ggplot(rslt.rrblup, aes(x=trait, y=corr, fill=k)) +
+################################# PLOT RR-BLUP ###############################
+load("~/rslt.rep30.rrblup.RData")
+plot_rrblup <- ggplot(rslt.rep30.rrblup, aes(x=trait, y=corr, fill=k)) +
+  theme_bw() +
+  theme(legend.background=element_blank()) + #panel.grid=element_blank(), 
   xlab('Trait') +
   ylab('Correlation') +
-  geom_violin() 
+  geom_split_violin(trim=T, color=NA) +
+  geom_point(stat='summary', fun=median, position=position_dodge(width=.3), color='grey40') +
+  stat_summary(fun.min=function(x){quantile(x)[2]}, fun.max=function(x){quantile(x)[4]},
+               geom='errorbar', color='grey40', width=.03, size=.5,
+               position=position_dodge(width=.3))
+  #geom_boxplot(width=.2, outlier.colour = NA,color='grey30')
 #Rplot_rrblup 600x400

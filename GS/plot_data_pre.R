@@ -1,8 +1,35 @@
 #data preparation for plot
+
+########################## COUNT SUBP ########################
+count_subp <- function() {
+  # no NA ----------------------
+  num_comp <- length(rice.compl[["splm"]][["Sub.population"]])
+  nam_subp_compl <- names(rice.subp.compl)
+  out_compl <- as.data.frame(matrix(NA, nrow = length(nam_subp_compl), ncol = 3))
+  for (sp in 1:length(nam_subp_compl)) {
+    out_compl[sp, 1] <- nam_subp_compl[sp]
+    out_compl[sp, 2] <- nrow(rice.subp.compl[[sp]][[1]])
+    out_compl[sp, 3] <- out_compl[sp, 2]/num_comp
+  }
+  out_compl[, 2] <- as.numeric(out_compl[, 2])
+  out_compl[, 3] <- as.numeric(out_compl[, 3])
+  # original --------------------
+  num_orig <- length(rice.origin[["SD1"]][["Sub.population"]])
+  nam_subp <- names(rice.subp)
+  out <- as.data.frame(matrix(NA, nrow = length(nam_subp), ncol = 3))
+  for (sp in 1:length(nam_subp)) {
+    out[sp, 1] <- nam_subp[sp]
+    out[sp, 2] <- nrow(rice.subp[[sp]][[1]])
+    out[sp, 3] <- out[sp, 2]/num_orig
+  }
+  out[, 2] <- as.numeric(out[, 2])
+  out[, 3] <- as.numeric(out[, 3])
+  return(list(origin=out, no_NA=out_compl))
+}
+
+################################## BGLR #################################
 library(foreach)
 library(dplyr)
-
-############# BGLR #################
 setwd("~/")
 load("~/rice.origin.RData")
 source("~/useful_funcs.R")
@@ -34,17 +61,16 @@ rslt.collect.bglr <- function(dir_rslt='~/bglr/', grepW='r.bg', trait_list) {
     out.rn <- as.data.frame(out.rn)
     for (colu in 1:4) {out.rn[[colu]] <- as.numeric(out.rn[[colu]])}
     for (colu in 5:8) {out.rn[[colu]] <- as.factor(out.rn[[colu]])}
-    #rm(rslt)
     out.rn
   }
-  colnames(rslt.co)[1] <- 'corr'
   return(rslt.co)
 }
-rslt.bglr <- rslt.collect.bglr(trait_list = trait_list)
-#save_mT_grep('rslt.bglr')
+rslt.rep30.bglr <- rslt.collect.bglr(trait_list = trait_list)
+save_mT_grep('rslt.rep30.bglr')
 
 
-################# RR-BLUP ##################
+################################### RR-BLUP ###################################
+library(foreach)
 rslt.collect.rrblup <- function(dir_rslt='~/rrblup/', grepW='r.rrb', trait_list) {
   rslt.co <- foreach (n = dir(dir_rslt)[grep(grepW, dir(dir_rslt))], .combine = 'rbind') %do% {
     load(paste0(dir_rslt, n), envir = .GlobalEnv)
@@ -62,7 +88,6 @@ rslt.collect.rrblup <- function(dir_rslt='~/rrblup/', grepW='r.rrb', trait_list)
       }
       m.rslt <- rslt.f1/kN
       m.rslt <- c(m.rslt, rn, trait_list[traitN], kN)
-      #print(m.rslt)
       m.rslt
     }
     colnames(out.rn) <- c('corr', 'mse', 'mae', 'randomN', 'trait', 'k')
@@ -75,5 +100,5 @@ rslt.collect.rrblup <- function(dir_rslt='~/rrblup/', grepW='r.rrb', trait_list)
   }
   return(rslt.co)
 }
-rslt.rrblup <- rslt.collect.rrblup(trait_list = trait_list)
-save_mT_grep('rslt.rrblup')
+rslt.rep30.rrblup <- rslt.collect.rrblup(trait_list = trait_list)
+save_mT_grep('rslt.rep30.rrblup')
