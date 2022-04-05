@@ -7,22 +7,24 @@ load("~/rice.origin.RData")
 
 ############################## Plot Subpopulation #############################
 num_ratio_subp <- count_subp()
-p1 <- cbind(num_ratio_subp$origin, 'Complete')
-p2 <- cbind(num_ratio_subp$no_NA, 'Removed samples with missing values')
+p1 <- cbind(num_ratio_subp$origin, 'Original')
+p2 <- cbind(num_ratio_subp$no_NA, 'Missing values removed')
 colnames(p1) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
 colnames(p2) <- c('Subpopulation', 'Count', 'Ratio', 'Dataset')
 num_ratio_subp <- rbind(p1, p2)
 rm(p1, p2)
 #
-subp_plot <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, group=Dataset)) +
+plot_subp <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, group=Dataset)) +
   ylim(c(0,110)) +
   geom_bar(position="dodge", width = .5, stat="identity") +
-  labs(title='Count Subpopulations') +
+  #labs(title='Count Subpopulations') +
+  theme_bw() +
   theme(legend.position = c(.22, .85),
-        legend.background = element_blank()) +
+        legend.background = element_blank(), panel.grid=element_blank()) +
   geom_text(show.legend = FALSE, 
             aes(alpha=.7, label=paste(format(round(Ratio*100, 2), nsmall=2), "% \n(", Count, ')', "\n\n", sep="")), 
             position=position_dodge2(.6), size=2.6, hjust=.4)
+#720x450
 
 ############################### PLOT MAP ###############################
 library(ggmap)
