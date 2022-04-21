@@ -24,4 +24,4 @@ save_name <- variable_name
 names(tmp_list) <- c(variable_name)
 list2env(tmp_list, .GlobalEnv)
 #save(list=c(variable_name), file = save_name)
-save_multiThreads(variable_name, save_name, 12)
+save_multiThreads(variable_name, save_name, 10)

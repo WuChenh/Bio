@@ -2,6 +2,7 @@
 #xz -9vk --threads=20 rice.origin.RData
 #
 library(ggplot2)
+library(latex2exp)
 source("~/geom_split_violin.R")
 load("~/rice.origin.RData")
 
@@ -59,25 +60,74 @@ plot_mp <- ggplot(map_posi) +
 load("~/rslt.rep30.bglr.RData")
 #bglr by chr
 
-#plot1: compare k
-plot_bglr <- ggplot(rslt.rep30.bglr, aes(x=bayes, y=corr, fill=k)) +
+#plot1: compare k by Corr
+plot_bglr_cor <- ggplot(rslt.rep30.bglr, aes(x=Bayes, y=Corr, fill=K)) +
+  theme_bw() +
+  theme(legend.background=element_blank()) + #panel.grid=element_blank(), 
   xlab('Bayes') +
-  ylab('Correlation') +
+  ylab("Mean Pearson\'s correlation") + #TeX("Mean $R^{\\2}$")
   geom_split_violin(color=NA) +
-  facet_wrap(~trait, nrow=2)
-#Rplot_bglr_k 900x400
+  geom_point(size=.9, stat='summary', fun=median, position=position_dodge(width=.4), color='grey40') +
+  stat_summary(fun.min=function(x){quantile(x)[2]}, fun.max=function(x){quantile(x)[4]},
+               geom='errorbar', color='grey40', width=.04, size=.3,
+               position=position_dodge(width=.4)) +
+  facet_wrap(~Trait, nrow=2)
+#Rplot_bglr 900x450
+
+#plot_bglr_nIter
+load("~/bglr/iter/nIter.t4.bI49.RData")
+rslt.t4.bI49 <- rslt.t4.bI49[-1,]
+rslt.t4.bI49 <- as.data.frame(rslt.t4.bI49)
+#
+#1 MSE ##############
+plot_bglr_nIter12000_MSE <- ggplot(rslt.t4.bI49, aes(x=nIter, y=MSE_mean)) +
+  scale_x_continuous(breaks=c(100,2500,5000,7500,10000,12000)) +
+  theme_bw() +
+  theme(legend.background=element_blank()) + #panel.grid=element_blank(), 
+  xlab('Number of iterations') +
+  ylab('Mean MSE') + #TeX("$R^{\\2}$")
+  geom_line() #+ geom_smooth(method='loess')
+# output 700x400
+#
+plot_bglr_nIter2550_MSE <- ggplot(rslt.t4.bI49[1:50,], aes(x=nIter, y=MSE_mean)) + #color=MSE_mean
+  scale_x_continuous(breaks=c(100,500,1000,1500,2000,2550)) +
+  theme_bw() +
+  theme(legend.background=element_blank(), legend.title=element_blank(), legend.position = 'bottom') + #panel.grid=element_blank(), 
+  xlab('Number of iterations') +
+  ylab('Mean MSE') + #TeX("$R^{\\2}$")
+  geom_line() + geom_smooth(method='gam') #gam/loess
+# output 700x400, 420x450
+#
+#2 Corr ##############
+plot_bglr_nIter12000_Corr <- ggplot(rslt.t4.bI49, aes(x=nIter, y=Corr_mean)) +
+  scale_x_continuous(breaks=c(100,2500,5000,7500,10000,12000)) +
+  theme_bw() +
+  theme(legend.background=element_blank()) + #panel.grid=element_blank(), 
+  xlab('Number of iterations') +
+  ylab("Mean Pearson\'s correlation") +
+  geom_line() #+ geom_smooth(method='loess')
+# output 700x400
+#
+plot_bglr_nIter2550_Corr <- ggplot(rslt.t4.bI49[1:50,], aes(x=nIter, y=Corr_mean)) + #color=Corr_mean
+  scale_x_continuous(breaks=c(100,500,1000,1500,2000,2550)) +
+  theme_bw() +
+  theme(legend.background=element_blank(), legend.title=element_blank(), legend.position = 'bottom') + #panel.grid=element_blank(), 
+  xlab('Number of iterations') +
+  ylab("Mean Pearson\'s correlation") +
+  geom_line() + geom_smooth(method='gam')
+# output 700x400, 420x450
 
 ################################# PLOT RR-BLUP ###############################
 load("~/rslt.rep30.rrblup.RData")
-plot_rrblup <- ggplot(rslt.rep30.rrblup, aes(x=trait, y=corr, fill=k)) +
+plot_rrblup_cor <- ggplot(rslt.rep30.rrblup, aes(x=Trait, y=Corr, fill=K)) +
   theme_bw() +
   theme(legend.background=element_blank()) + #panel.grid=element_blank(), 
   xlab('Trait') +
-  ylab('Correlation') +
+  ylab("Mean Pearson\'s correlation") + #TeX("Mean $R^{\\2}$")
   geom_split_violin(trim=T, color=NA) +
   geom_point(stat='summary', fun=median, position=position_dodge(width=.3), color='grey40') +
   stat_summary(fun.min=function(x){quantile(x)[2]}, fun.max=function(x){quantile(x)[4]},
                geom='errorbar', color='grey40', width=.03, size=.5,
                position=position_dodge(width=.3))
-  #geom_boxplot(width=.2, outlier.colour = NA,color='grey30')
+#geom_boxplot(width=.2, outlier.colour = NA,color='grey30')
 #Rplot_rrblup 600x400

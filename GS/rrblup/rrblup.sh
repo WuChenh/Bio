@@ -21,3 +21,4 @@ Rscript rrblup.qsub.R 5 5
 Rscript rrblup.qsub.R 6 10
 Rscript rrblup.qsub.R 6 5
 wait
+tar cvf rrblup_rslt.tar r.rrb*

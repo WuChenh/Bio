@@ -1,4 +1,10 @@
 #data preparation for plot
+library(foreach)
+library(dplyr)
+setwd("~/")
+load("~/rice.origin.RData")
+source("~/useful_funcs.R")
+trait_list <- colnames(rice.compl$phen)
 
 ############################### COUNT SUBP ###############################
 count_subp <- function() {
@@ -28,12 +34,6 @@ count_subp <- function() {
 }
 
 ################################## BGLR #################################
-library(foreach)
-library(dplyr)
-setwd("~/")
-load("~/rice.origin.RData")
-source("~/useful_funcs.R")
-trait_list <- colnames(rice.compl$phen)
 
 #method_name <- 'BGLR'
 rslt.collect.bglr <- function(dir_rslt='~/bglr/', grepW='r.bg', trait_list) {
@@ -47,13 +47,14 @@ rslt.collect.bglr <- function(dir_rslt='~/bglr/', grepW='r.bg', trait_list) {
     kN <- length(rslt[[1]])
     ##
     out.rn <- foreach (rn = 1:randN, .combine = 'rbind') %do% {
-      rslt.f1 <- rslt[[rn]][[1]][[2]] #[[2]]=[['rslt_mx']]
+      rslt.f1 <- rslt[[rn]][[1]][[2]][, -5] #[[2]]=[['rslt_mx']]
+      # Mean matrix of r2, corr... for K-fold
       for (fdn in 2:kN) {
-        rslt.f1 <- rslt.f1 + rslt[[rn]][[fdn]][[2]]
+        rslt.f1 <- rslt.f1 + rslt[[rn]][[fdn]][[2]][, -5]
       }
       m.rslt <- rslt.f1/kN
       m.rslt <- m.rslt %>% cbind(row.names(m.rslt)) %>% cbind(rn) %>% cbind(trait_list[traitN]) %>% cbind(kN)
-      colnames(m.rslt)[5:8] <- c('bayes', 'randomN', 'trait', 'k')
+      colnames(m.rslt)[5:8] <- c('Bayes', 'RandomN', 'Trait', 'K')
       rownames(m.rslt) <- NULL
       m.rslt
     }
@@ -82,20 +83,21 @@ rslt.collect.rrblup <- function(dir_rslt='~/rrblup/', grepW='r.rrb', trait_list)
     kN <- length(rslt[[1]])
     ##
     out.rn <- foreach (rn = 1:randN, .combine = 'rbind') %do% {
-      rslt.f1 <- c(rslt[[rn]][[1]][[1]], rslt[[rn]][[1]][[2]], rslt[[rn]][[1]][[3]])
+      # MSE, MAE, Cor, R2
+      rslt.f1 <- c(rslt[[rn]][[1]][[1]], rslt[[rn]][[1]][[2]], rslt[[rn]][[1]][[3]], rslt[[rn]][[1]][[4]])
       for (fdn in 2:kN) {
-        rslt.f1 <- rslt.f1 + c(rslt[[rn]][[fdn]][[1]], rslt[[rn]][[fdn]][[2]], rslt[[rn]][[fdn]][[3]])
+        rslt.f1 <- rslt.f1 + c(rslt[[rn]][[fdn]][[1]], rslt[[rn]][[fdn]][[2]], rslt[[rn]][[fdn]][[3]], rslt[[rn]][[fdn]][[4]])
       }
       m.rslt <- rslt.f1/kN
       m.rslt <- c(m.rslt, rn, trait_list[traitN], kN)
       m.rslt
     }
-    colnames(out.rn) <- c('corr', 'mse', 'mae', 'randomN', 'trait', 'k')
+    colnames(out.rn) <- c('MSE', 'MAE', 'Corr', 'R2', 'RandomN', 'Trait', 'K')
     rownames(out.rn) <- NULL
     ##
     out.rn <- as.data.frame(out.rn)
-    for (colu in 1:3) {out.rn[[colu]] <- as.numeric(out.rn[[colu]])}
-    for (colu in 4:6) {out.rn[[colu]] <- as.factor(out.rn[[colu]])}
+    for (colu in 1:4) {out.rn[[colu]] <- as.numeric(out.rn[[colu]])}
+    for (colu in 5:7) {out.rn[[colu]] <- as.factor(out.rn[[colu]])}
     out.rn
   }
   return(rslt.co)
@@ -109,30 +111,56 @@ save_mT_grep('rslt.rep30.rrblup')
 library(foreach)
 load("~/rice.origin.RData")
 trait_list <- colnames(rice.compl$phen)
-#rslt.rep30.rrblup[which(rslt.rep30.rrblup$corr==max(rslt.rep30.rrblup$corr)),]
-rslt.best.X <- function(rsltX, mean_OR_median='mean') {
+#
+rslt.best.X <- function(rsltX, indicator=1, mean_OR_median='mean') {
+  ################ Indicator: 1=MSE, 2=MAE, 3=Cor, 4=R2 #################
   out <- foreach (tr = trait_list, .combine = 'rbind') %do% {
-    pkl <- rsltX[which(rsltX$trait==tr), ]
-    pkl.k5 <- pkl[which(pkl$k==5), 1:3]
-    pkl.k10 <- pkl[which(pkl$k==10), 1:3]
-    if (mean_OR_median=='mean') {
-      if (sum(pkl.k5[,1]) >= sum(pkl.k10[,1])) { bstK <- 5 } else { bstK <- 10 }
-      outl <- c(mean(pkl[which(pkl$k==bstK), 1]), mean(pkl[which(pkl$k==bstK), 2]),
-                mean(pkl[which(pkl$k==bstK), 3]), tr, bstK)
+    pkl <- rsltX[which(rsltX$Trait==tr), ]
+    pkl.k5 <- pkl[which(pkl$K==5), 1:4]
+    pkl.k10 <- pkl[which(pkl$K==10), 1:4]
+    if (indicator < 2.1) {
+      if (mean_OR_median=='mean') {
+        if (sum(pkl.k5[,indicator]) <= sum(pkl.k10[,indicator])) { bstK <- 5 } else { bstK <- 10 }
+        outl <- c(tr, bstK, 
+                  mean(pkl[which(pkl$K==bstK), 1]), mean(pkl[which(pkl$K==bstK), 2]),
+                  mean(pkl[which(pkl$K==bstK), 3]), mean(pkl[which(pkl$K==bstK), 4]))
+      } else {
+        if (median(pkl.k5[,indicator]) <= median(pkl.k10[,indicator])) { bstK <- 5 } else { bstK <- 10 }
+        outl <- c(tr, bstK, 
+                  median(pkl[which(pkl$K==bstK), 1]), median(pkl[which(pkl$K==bstK), 2]),
+                  median(pkl[which(pkl$K==bstK), 3]), median(pkl[which(pkl$K==bstK), 4]))
+      }
     } else {
-      if (median(pkl.k5[,1]) >= median(pkl.k10[,1])) { bstK <- 5 } else { bstK <- 10 }
-      outl <- c(median(pkl[which(pkl$k==bstK), 1]), median(pkl[which(pkl$k==bstK), 2]),
-                median(pkl[which(pkl$k==bstK), 3]), tr, bstK)
+      if (mean_OR_median=='mean') {
+        if (sum(pkl.k5[,indicator]) >= sum(pkl.k10[,indicator])) { bstK <- 5 } else { bstK <- 10 }
+        outl <- c(tr, bstK, 
+                  mean(pkl[which(pkl$K==bstK), 1]), mean(pkl[which(pkl$K==bstK), 2]),
+                  mean(pkl[which(pkl$K==bstK), 3]), mean(pkl[which(pkl$K==bstK), 4]))
+      } else {
+        if (median(pkl.k5[,indicator]) >= median(pkl.k10[,indicator])) { bstK <- 5 } else { bstK <- 10 }
+        outl <- c(tr, bstK, 
+                  median(pkl[which(pkl$K==bstK), 1]), median(pkl[which(pkl$K==bstK), 2]),
+                  median(pkl[which(pkl$K==bstK), 3]), median(pkl[which(pkl$K==bstK), 4]))
+      }
     }
     outl
   }
-  colnames(out) <- c('corr', 'mse', 'mae', 'trait', 'k')
+  colnames(out) <- c('Trait', 'K', 'MSE', 'MAE', 'Corr', 'R2')
   rownames(out) <- NULL
   out <- as.data.frame(out)
-  for (colu in 1:3) {out[[colu]] <- as.numeric(out[[colu]])}
-  for (colu in 4:5) {out[[colu]] <- as.factor(out[[colu]])}
+  for (colu in 3:6) {out[[colu]] <- as.numeric(out[[colu]])}
+  for (colu in 1:2) {out[[colu]] <- as.factor(out[[colu]])}
   return(out)
 }
 #
-rslt.bst.rrblup <- rslt.best.X(rslt.rep30.rrblup)
-rslt.bst.bglr <- rslt.best.X(rslt.rep30.bglr)
+bst.round <- function(rslt, digits=6) {
+  return(cbind(rslt[,1:2], round(rslt[,3:6], digits)))
+}
+rslt.bst.rrblup.mse <- rslt.best.X(rslt.rep30.rrblup)
+rslt.bst.rrblup.cor <- rslt.best.X(rslt.rep30.rrblup, 3)
+rslt.bst.bglr.mse <- rslt.best.X(rslt.rep30.bglr)
+rslt.bst.bglr.cor <- rslt.best.X(rslt.rep30.bglr, 3)
+write.table(bst.round(rslt.bst.rrblup.mse), 'rslt.best.rrblup.mse.txt', quote=F, row.names=F)
+write.table(bst.round(rslt.bst.rrblup.cor), 'rslt.best.rrblup.cor.txt', quote=F, row.names=F)
+write.table(bst.round(rslt.bst.bglr.mse), 'rslt.best.bglr.mse.txt', quote=F, row.names=F)
+write.table(bst.round(rslt.bst.bglr.cor), 'rslt.best.bglr.cor.txt', quote=F, row.names=F)
