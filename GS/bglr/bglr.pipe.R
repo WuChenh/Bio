@@ -17,7 +17,7 @@ R2.adj.calc <- function(r2, n, p) {
 #BGLR_per_md
 bglr.pipe <- function(x_trn, y_trn, x_tst, y_tst, saveAt='z',
                       md_lst=c("BRR","BayesA","BL","BayesB","BayesC"),
-                      nIter=12000, burnIn=2000) {
+                      nIter=11000, burnIn=2000) {
   source('bglr.pipe.R') ######
   num_md <- length(md_lst)
   tmp_md <- list()
