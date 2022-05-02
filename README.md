@@ -1,4 +1,4 @@
 # Bio
-Bioinformatics' play. 
+Bioinformatics' playground. 
 
 This is a repository storing my bioinformatics coding works.  
