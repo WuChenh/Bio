@@ -159,39 +159,3 @@ write.table(bst.round(rslt.bst.rrblup.cor), 'rslt.best.rrblup.cor.txt', quote=F,
 write.table(bst.round(rslt.bst.bglr.mse), 'rslt.best.bglr.mse.txt', quote=F, row.names=F)
 write.table(bst.round(rslt.bst.bglr.cor), 'rslt.best.bglr.cor.txt', quote=F, row.names=F)
 
-
-################################### Best combn #################################
-library(foreach)
-best_combn <- function(bigmx, combn_list, #combn_list <- combn(11, 2)
-                       tag,
-                       nam_trait_all=c('FLL', 'FLW', 'PH', 'SN', 'FP', 'PF', 'SL', 'SW', 'SV', 'SSA', 'AC'),
-                       return_best_combn=TRUE) { 
-  combn_list <- t(combn_list)
-  num_trait_all  <- (ncol(bigmx)-1)/3
-  num_trait_used <- ncol(combn_list)
-  tmp <- foreach(nr = 1:nrow(combn_list), .combine='rbind') %do% {
-    c.corr <- bigmx[nr, combn_list[nr,]]
-    c.mse  <- bigmx[nr, num_trait_all + combn_list[nr,]]
-    corr_mse <- cbind(cbind(c.corr, c.mse), combn_list[nr,])
-    cbind(corr_mse, nr)
-  }
-  colnames(tmp) <- c('Corr', "MSE", 'Trait', 'Combn')
-  rownames(tmp) <- NULL
-  #
-  tmp <- data.frame(Corr= as.numeric(tmp[,1]), 
-                    MSE=  as.numeric(tmp[,2]),
-                    Trait=as.factor(nam_trait_all[tmp[,3]]),
-                    Combn=as.factor(tmp[,4]) )
-  #
-  if(!return_best_combn) {return(tmp)}
-  #
-  tmp <- foreach (trt = sort(nam_trait_all), .combine='rbind') %do% {
-    lines_trt <- tmp[which(tmp$Trait == trt), -4]
-    lines_trt[which(lines_trt[,2] == min(lines_trt[,2])), ]
-  }
-  rownames(tmp) <- NULL
-  tmp <- cbind(tmp, tag) ######tag#######
-  colnames(tmp)[4] <- "allMethods"
-  tmp$allMethods <- as.factor(tmp$allMethods)
-  return(tmp)
-}
