@@ -19,7 +19,9 @@ plot_subp <- ggplot(num_ratio_subp, aes(x=Subpopulation, y=Count, fill=Dataset, 
   ylim(c(0,110)) +
   geom_bar(position="dodge", width = .5, stat="identity") +
   #labs(title='Count Subpopulations') +
+  ylab('Number of samples') +
   theme_bw() +
+  scale_fill_grey()+
   theme(legend.position = c(.17, .85),
         legend.background = element_blank(), panel.grid=element_blank()) +
   geom_text(show.legend = FALSE, 
@@ -141,7 +143,7 @@ plot_rrblup_cor <- ggplot(rslt.randrep10.rrblup, aes(x=Trait, y=Corr, fill=TrnPe
 
 ############################## PLOT phenotypes' Cor ############################
 trn.p.scale <- scale(as.matrix(datain$trn.p))
-cor_P_mx <- t(trn.p.scale) %*% trn.p.scale
+#cor_P_mx <- t(trn.p.scale) %*% trn.p.scale
 cor_P_mx <- cor(trn.p.scale)
 
 library(corrplot)
@@ -149,6 +151,7 @@ corrplot(corr = cor_P_mx, method = "shade",type = "upper", order = 'alphabet', t
 corrplot(corr = cor_P_mx, add = TRUE, type = "lower", method = "number", order = 'alphabet',
          diag = FALSE, tl.pos = "n", cl.pos="n")
 # 600x480
+heatmap(cor_P_mx)
 
 
 
@@ -157,104 +160,113 @@ library(ggplot2)
 library(keras)
 
 ############################# Compare 2 traits combn ##########################
-ggplot(NN_MT_combn_wt_plot, aes(Trait, MSE, fill=Combn))+
+# MT: wt, env. ST: wt
+ggplot(NN_MT2_wt_env_plot, aes(Trait, MSE, fill=Combn))+
   theme_bw()+
   theme(legend.position='none')+
   scale_fill_grey()+
   geom_col(position='dodge')+
-  geom_col(data=NN_ST_Wt_bst, aes(Trait, MSE, fill='grey', alpha=.2))
-# Rplot_combn2_wt_MSE 800x450
+  geom_col(data=NN_ST_Wt, aes(Trait, MSE, fill='grey', alpha=.2))
+# Rplot_compare_MT2.w.e_ST.w 800x450
 
-ggplot(NN_MT_combn_wt_plot, aes(Trait, Corr, fill=Combn))+
+ggplot(NN_MT2_wt_plot, aes(Trait, MSE, fill=Combn))+
   theme_bw()+
   theme(legend.position='none')+
-  ylab("Mean Pearson\'s correlation")+
   scale_fill_grey()+
   geom_col(position='dodge')+
-  geom_col(data=NN_ST_Wt_bst, aes(Trait, Corr, fill='grey', alpha=.2))
-# Rplot_combn2_wt_Cor 800x450
+  geom_col(data=NN_ST_Wt, aes(Trait, MSE, fill='grey', alpha=.2))
+# Rplot_compare_MT2.w_ST.w 800x450
 
 #======================================ALL=====================================#
-#######color
-plot_ALL_MSE_colorful <- ggplot(allM1, aes(Trait, MSE, fill=allMethods)) +
+plot_ALL_MSE <- ggplot(allM1, aes(Trait, MSE, fill=allMethods)) +
   theme_bw() +
-  theme(legend.position='bottom', legend.title=element_blank()) +
-  geom_col(position='dodge', width=.7) +
-  scale_fill_manual(values=c('#53868B', '#7AC5CD',
-                             '#9BCD9B', '#B4EEB4',
-                             '#2E8B57', '#3CB371',
-                             '#FF4500', '#FF7F50',    #'#1c1c1c', '#4F4F4F',
-                             '#FF7F24', '#FFA54F',
-                             '#4F94CD', '#36648B'),
-                    breaks=c('3','4','1','2','7','8','9','10','12','11','5','6'),
-                    labels=c('ST,weighted', 'ST,unweighted',
-                             'MT(11),weighted', 'MT(11),unweighted',
-                             'MT(11),weighted,climate', 'MT(11),unweighted,climate',
-                             'MT(2),weighted', 'MT(2),unweighted',
-                             'MT(2),weighted,climate', 'MT(2),unweighted,climate',
-                             'RR-BLUP', 'BLR'))
-#######bw
-plot_ALL_MSE_bw <- ggplot(allM1, aes(Trait, MSE, fill=allMethods)) +
-  theme_bw() +
-  theme(legend.position='bottom', legend.title=element_blank()) +
-  geom_col(position='dodge', width=.7) +
-  scale_fill_manual(values=c('#53868B', '#7AC5CD',
-                             '#9BCD9B', '#B4EEB4',
-                             '#2E8B57', '#3CB371',
-                             '#1c1c1c', '#d2d2d2',
-                             '#4f4f4f', '#b5b5b5',
-                             '#4F94CD', '#36648B'),
-                    breaks=c('3','4','1','2','7','8','9','10','12','11','5','6'),
-                    labels=c('ST,weighted', 'ST,unweighted',
-                             'MT(11),weighted', 'MT(11),unweighted',
-                             'MT(11),weighted,climate', 'MT(11),unweighted,climate',
-                             'MT(2),weighted', 'MT(2),unweighted',
-                             'MT(2),weighted,climate', 'MT(2),unweighted,climate',
-                             'RR-BLUP', 'BLR'))
-# Rplot_ALL_MSE 900x500 850x550
+  theme(legend.position='bottom') +
+  labs(fill='Method') +
+  geom_col(position='dodge', width=.8) +
+  scale_fill_manual(values=c('#69BEFF', '#4F94CD',
+                             "#DCDCDC", "#A4A4A4", "#737373", "#4E4E4E",
+                             "#82d282", "#3CB371", "#319960", '#1e7846',
+                             "#FFC125", "#FF8C69", "#FF6347", "#B04444",
+                             '#64f0dc', '#19cdcd', '#0CABA8', '#0E8C8A'),
+                    breaks=as.character(seq(1,18)),
+                    labels=c('RR-BLUP', 'BLR',
+                             'ST', 'ST, E', 'ST, W', 'ST, W, E',
+                             'MT(11)', 'MT(11), E', 'MT(11), W', 'MT(11), W, E',
+                             'MT(2)', 'MT(2), E', 'MT(2), W', 'MT(2), W, E',
+                             'MT(3)', 'MT(3), E', 'MT(3), W', 'MT(3), W, E'))
+# Rplot_ALL_MSE 850x550
 
-#######color
-plot_ALL_Cor_colorful <- ggplot(allM1, aes(Trait, Corr, fill=allMethods)) +
+plot_ALL_Cor <- ggplot(allM1, aes(Trait, Corr, fill=allMethods)) +
   theme_bw() +
-  theme(legend.position='bottom', legend.title=element_blank()) +
+  theme(legend.position='bottom') +
+  labs(fill='Method') +
   ylab("Mean Pearson\'s correlation") +
-  geom_col(position='dodge', width=.7) +
-  scale_fill_manual(values=c('#53868B', '#7AC5CD',
-                             '#9BCD9B', '#B4EEB4',
-                             '#2E8B57', '#3CB371',
-                             '#FF4500', '#FF7F50',
-                             '#FF7F24', '#FFA54F',
-                             '#4F94CD', '#36648B'),
-                    breaks=c('3','4','1','2','7','8','9','10','12','11','5','6'),
-                    labels=c('ST,weighted', 'ST,unweighted',
-                             'MT(11),weighted', 'MT(11),unweighted',
-                             'MT(11),weighted,climate', 'MT(11),unweighted,climate',
-                             'MT(2),weighted', 'MT(2),unweighted',
-                             'MT(2),weighted,climate', 'MT(2),unweighted,climate',
-                             'RR-BLUP', 'BLR'))
-#######bw
-plot_ALL_Cor_bw <- ggplot(allM1, aes(Trait, Corr, fill=allMethods)) +
+  geom_col(position='dodge', width=.8) +
+  scale_fill_manual(values=c('#69BEFF', '#4F94CD',
+                             "#DCDCDC", "#A4A4A4", "#737373", "#4E4E4E",
+                             "#82d282", "#3CB371", "#319960", '#1e7846',
+                             "#FFC125", "#FF8C69", "#FF6347", "#B04444",
+                             '#64f0dc', '#19cdcd', '#0CABA8', '#0E8C8A'),
+                    breaks=as.character(seq(1,18)),
+                    labels=c('RR-BLUP', 'BLR',
+                             'ST', 'ST, E', 'ST, W', 'ST, W, E',
+                             'MT(11)', 'MT(11), E', 'MT(11), W', 'MT(11), W, E',
+                             'MT(2)', 'MT(2), E', 'MT(2), W', 'MT(2), W, E',
+                             'MT(3)', 'MT(3), E', 'MT(3), W', 'MT(3), W, E'))
+# Rplot_ALL_Cor 850x550
+
+plot_ALL_byTrait_pts <- ggplot(allM1) +
   theme_bw() +
-  theme(legend.position='bottom', legend.title=element_blank()) +
-  ylab("Mean Pearson\'s correlation") +
-  geom_col(position='dodge', width=.7) +
-  scale_fill_manual(values=c('#53868B', '#7AC5CD',
-                             '#9BCD9B', '#B4EEB4',
-                             '#2E8B57', '#3CB371',
-                             '#1c1c1c', '#d2d2d2',
-                             '#4f4f4f', '#b5b5b5',
-                             '#4F94CD', '#36648B'),
-                    breaks=c('3','4','1','2','7','8','9','10','12','11','5','6'),
-                    labels=c('ST,weighted', 'ST,unweighted',
-                             'MT(11),weighted', 'MT(11),unweighted',
-                             'MT(11),weighted,climate', 'MT(11),unweighted,climate',
-                             'MT(2),weighted', 'MT(2),unweighted',
-                             'MT(2),weighted,climate', 'MT(2),unweighted,climate',
-                             'RR-BLUP', 'BLR'))
-# Rplot_ALL_Cor 900x500 850x550
+  geom_col(aes(allMethods, MSE, fill=allMethods), position='dodge', width=.8) +
+  geom_point(data=allM, aes(allMethods, MSE), size=.1, alpha=.7) +
+  #geom_boxplot(data=allM, aes(allMethods, MSE), alpha=.2) +
+  theme(legend.position='bottom', panel.grid=element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) +
+  facet_wrap(~Trait, nrow=3) +
+  labs(fill='Method', x='') +
+  scale_fill_manual(values=c('#69BEFF', '#4F94CD',
+                             "#DCDCDC", "#A4A4A4", "#737373", "#4E4E4E",
+                             "#82d282", "#3CB371", "#319960", '#1e7846',
+                             "#FFC125", "#FF8C69", "#FF6347", "#B04444",
+                             '#64f0dc', '#19cdcd', '#0CABA8', '#0E8C8A'),
+                    breaks=as.character(seq(1,18)),
+                    labels=c('RR-BLUP', 'BLR',
+                             'ST', 'ST, E', 'ST, W', 'ST, W, E',
+                             'MT(11)', 'MT(11), E', 'MT(11), W', 'MT(11), W, E',
+                             'MT(2)', 'MT(2), E', 'MT(2), W', 'MT(2), W, E',
+                             'MT(3)', 'MT(3), E', 'MT(3), W', 'MT(3), W, E'))
+# Rplot_ALL_byTrait_pts 850x550
 
 
 if(F){
+  plot_ALL_byTrait <- ggplot(allM1, aes(allMethods, MSE, fill=allMethods)) +
+  theme_bw() +
+  facet_wrap(~Trait, nrow=3) +
+  #scale_fill_grey() +
+  theme(legend.position='bottom', panel.grid=element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(fill='Method', x='') +
+  geom_col(position='dodge', width=.8) +
+  scale_fill_manual(values=c('#69BEFF', '#4F94CD',
+                             "#DCDCDC", "#A4A4A4", "#737373", "#4E4E4E",
+                             "#82d282", "#3CB371", "#319960", '#1e7846',
+                             "#FFC125", "#FF8C69", "#FF6347", "#B04444",
+                             '#64f0dc', '#19cdcd', '#0CABA8', '#0E8C8A'),
+                    breaks=as.character(seq(1,18)),
+                    labels=c('RR-BLUP', 'BLR',
+                             'ST', 'ST, E', 'ST, W', 'ST, W, E',
+                             'MT(11)', 'MT(11), E', 'MT(11), W', 'MT(11), W, E',
+                             'MT(2)', 'MT(2), E', 'MT(2), W', 'MT(2), W, E',
+                             'MT(3)', 'MT(3), E', 'MT(3), W', 'MT(3), W, E'))
+# Rplot_ALL_byTrait 850x550
+
+  ggplot(allM, aes(Corr, MSE, color=allMethods)) +
+    theme_bw() +
+    geom_line() +
+    facet_wrap(~allMethods, nrow=3)
+  
   plot_comp_bz_mse <- ggplot(compare_b, aes(Trait, MSE, fill=batch_size)) +
     theme_bw() +
     scale_fill_grey() +
@@ -271,26 +283,5 @@ if(F){
     ylab("Mean Pearson\'s correlation") +
     geom_col(position='dodge', width=0.7)
   # Rplot_compare_bz_cor 900x500
-  
-  
-  plot_comp_wtTF_ST_mse <- ggplot(NN_ST_all, aes(Trait, MSE, fill=Effects)) +
-    theme_bw() +
-    #scale_fill_grey() +
-    theme(legend.position='bottom') +
-    labs(fill='Assigned effects') +
-    geom_col(position='dodge', width=0.7) +
-    #scale_fill_discrete(breaks=c('T','F'), labels=c('T', 'F'))
-    scale_fill_manual(values=c('#989898', '#333333'))
-  # Rplot_comp_wtTF_ST_MSE 900x500
-  
-  plot_comp_wtTF_ST_cor <- ggplot(NN_ST_all, aes(Trait, Corr, fill=Effects)) +
-    theme_bw() +
-    #scale_fill_grey() +
-    theme(legend.position='bottom') +
-    labs(fill='Assigned effects') +
-    ylab("Mean Pearson\'s correlation") +
-    geom_col(position='dodge', width=0.7) +
-    scale_fill_manual(values=c('#989898', '#333333'))
-  # Rplot_comp_wtTF_ST_Cor 900x500
 }
 

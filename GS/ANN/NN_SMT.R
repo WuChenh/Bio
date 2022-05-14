@@ -102,7 +102,7 @@ NN_SMT <- function(trn.g, tst.g, trn.p, tst.p, trn.e, tst.e,
     G_input <- layer_input(shape = input_shape, name = 'G_input')
     G_out <- G_input %>%
       layer_dense(units = 1024, activation = activation) %>% #input_shape = input_shape
-      layer_dense(units = 256, activation = activation, name = 'G_out') # Should it be smaller than 256?
+      layer_dense(units = 512, activation = activation, name = 'G_out') # Should it be smaller than 256?
     #============================= Auxiliary_input ============================#
     E_input <- layer_input(shape = ncol(trn.e), name = 'E_input')
     E_out <- E_input %>%
@@ -110,9 +110,9 @@ NN_SMT <- function(trn.g, tst.g, trn.p, tst.p, trn.e, tst.e,
       layer_dense(units = 12, activation = 'linear', name = 'E_out') # Larger than trait number?
     #================================ Main ====================================#
     main_output <- layer_concatenate(c(G_out, E_out)) %>%  
-      layer_dense(units = 64, activation = 'linear') %>% #layer_dropout(rate = dropout) %>%
-      layer_dense(units = 64, activation = activation) %>% 
-      #layer_dense(units = 64, activation = activation) %>% 
+      layer_dense(units = 256, activation = 'linear') %>% #layer_dropout(rate = dropout) %>%
+      layer_dense(units = 256, activation = activation) %>% 
+      layer_dense(units = 128, activation = activation) %>% 
       layer_dense(units = num_trait, activation = 'linear', name = 'main_output')
     #
     modelIn <- keras_model(
@@ -209,8 +209,9 @@ NN_SMT_Sequential <- function(trn.g, tst.g, trn.p, tst.p, trn.e, tst.e,
   # Define and Refresh NN
   if (is.null(modelIn)) {
     modelIn = keras_model_sequential() %>%
-      layer_dense(units = 1024, activation = 'linear', input_shape = input_shape) %>%
-      layer_dense(units = 512, activation = activation) %>%
+      #layer_dense(units = 1024, activation = 'linear', input_shape = input_shape) %>%
+      layer_dense(units = 512, activation = activation, input_shape = input_shape) %>%
+      #layer_dense(units = 512, activation = activation) %>%
       layer_dropout(rate = dropout) %>% 
       #layer_dense(units = 256, activation = activation) %>%
       layer_dense(units = 128, activation = activation) %>%
@@ -266,18 +267,21 @@ format_output_NN <- function(NN_output, num_trait_all=11) {
 
 ################################### Best combn #################################
 library(foreach)
-best_combn <- function(mx_combns, combn_list, #combn_list <- combn(11, 2)
+best_combn <- function(mx_combns, combn_list, #combn_list <- t(combn(11, 2))
                        tag,
                        nam_trait_all=c('FLL', 'FLW', 'PH', 'SN', 'FP', 'PF', 'SL', 'SW', 'SV', 'SSA', 'AC'),
-                       return_best_combn=TRUE) { 
-  combn_list <- t(combn_list)
+                       return_best_combn=TRUE, repN=10) {
   num_trait_all  <- length(nam_trait_all)
-  num_trait_used <- ncol(combn_list)
+  nam_trait_used <- nam_trait_all[sort(unique(as.vector(combn_list)))]
   tmp <- foreach(nr = 1:nrow(combn_list), .combine='rbind') %do% {
-    c.corr <- mx_combns[nr, combn_list[nr,]]
-    c.mse  <- mx_combns[nr, num_trait_all + combn_list[nr,]]
-    corr_and_mse <- cbind(cbind(c.corr, c.mse), combn_list[nr,])
-    cbind(corr_and_mse, nr)
+    nsL <- (nr-1)*10 #for repeats lines
+    repLines <- foreach(ns = (nsL+1):(nsL+repN), .combine = 'rbind') %do% {
+      c.corr <- mx_combns[ns, combn_list[nr,]]
+      c.mse  <- mx_combns[ns, num_trait_all + combn_list[nr,]]
+      corr_and_mse <- cbind(cbind(c.corr, c.mse), combn_list[nr,])
+      cbind(corr_and_mse, nr)
+    }
+    repLines
   }
   colnames(tmp) <- c('Corr', "MSE", 'Trait', 'Combn')
   rownames(tmp) <- NULL
@@ -290,17 +294,24 @@ best_combn <- function(mx_combns, combn_list, #combn_list <- combn(11, 2)
   if(!return_best_combn) {return(tmp)}
   return2 <- tmp
   #
-  tmp <- foreach (trt = sort(nam_trait_all), .combine='rbind') %do% {
+  tmp <- foreach (trt = sort(nam_trait_used), .combine='rbind') %do% {
     lines_trt <- tmp[which(tmp$Trait == trt), ]
-    lines_cob <- foreach(cobs = lines_trt$Combn, .combine = 'rbind') %do% { #Mean for the same combn
-      which_combn <- which(lines_trt$Combn == cobs)
-      c(mean(lines_trt[which_combn, 1]), mean(lines_trt[which_combn, 2]), trt)
+    #Mean for the same combn:
+    lines_cob <- foreach(cobs = unique(lines_trt$Combn), .combine = 'rbind') %do% { # Must be unique()
+      lines_trt_which_combn <- lines_trt[which(lines_trt$Combn == cobs),]
+      c(mean(lines_trt_which_combn[, 1]), mean(lines_trt_which_combn[, 2]), trt)
     }
-    lines_cob[which(lines_cob[,2] == min(lines_cob[,2])), ]
+    if (is.null(dim(lines_cob))) {
+      lines_out <- lines_cob
+    } else {
+      lines_out <- lines_cob[which(lines_cob[,2] == min(lines_cob[,2])), ]
+    }
+    lines_out
   }
   rownames(tmp) <- NULL
   tmp <- cbind(tmp, tag) ######tag#######
-  tmp <- data.frame(Corr=tmp[,1], MSE=tmp[,2], Trait=as.factor(tmp[,3]),
+  tmp <- data.frame(Corr=as.numeric(tmp[,1]), MSE=as.numeric(tmp[,2]), 
+                    Trait=as.factor(tmp[,3]),
                     allMethods=as.factor(tmp[,4]))
   return(list(combn_best=tmp, combn_all=return2))
 }

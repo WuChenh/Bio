@@ -1,10 +1,17 @@
 # little functions
 
 reg_trait <- function(varName) {
-  reg_tr <- regexec("tra[0-9]", varName)
-  trait <- substring(varName, reg_tr[[1]][1], (reg_tr[[1]][1] + attributes(reg_tr[[1]])[[1]] - 1))
+  reg_tr <- regexpr('tra', varName)
+  reg_tp <- regexpr('.tp', varName)
+  trait <- substring(varName, reg_tr[[1]][1], (reg_tp[[1]][1] - 1))
   traitN <- as.numeric(gsub('tra', '', trait))
   return(traitN)
+}
+reg_trnPerc <- function(varName) {
+  reg_tp <- regexec("tp0.[0-9]", varName)
+  out <- substring(varName, reg_tp[[1]][1], (reg_tp[[1]][1] + attributes(reg_tp[[1]])[[1]] - 1))
+  out <- as.numeric(gsub('tp0.', '', out))
+  return(out/10)
 }
 
 rename_var <- function(varName) {

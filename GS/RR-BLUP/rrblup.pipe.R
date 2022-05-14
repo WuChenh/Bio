@@ -13,6 +13,7 @@ R2.adj.calc <- function(r2, n, p) {
 }
 #
 rrblup.pipe <- function(x_trn, y_trn, x_tst, y_tst) {
+  source("rrblup.pipe.R")
   pred_mod <- mixed.solve(y_trn, x_trn, SE=TRUE)
   #write(x='---MSol Done.', file='mark.txt', append=TRUE)############
   pred <- (x_tst %*% as.matrix(pred_mod$u))[, 1] + as.numeric(pred_mod$beta)

@@ -159,3 +159,46 @@ write.table(bst.round(rslt.bst.rrblup.cor), 'rslt.best.rrblup.cor.txt', quote=F,
 write.table(bst.round(rslt.bst.bglr.mse), 'rslt.best.bglr.mse.txt', quote=F, row.names=F)
 write.table(bst.round(rslt.bst.bglr.cor), 'rslt.best.bglr.cor.txt', quote=F, row.names=F)
 
+#=================================== BEST Method/Combn ==============================#
+best_methodOrCombn <- function(methodMx, isCombn=F) {
+  nam_trait_used <- as.character(unique(methodMx$Trait))
+  tmp <- foreach (trt = sort(nam_trait_used), .combine='rbind') %do% {
+    lines_trt <- methodMx[which(methodMx$Trait == trt), ]
+    lines_out <- lines_trt[which(lines_trt[,2] == min(lines_trt[,2])), ]
+    lines_out
+  }
+  rownames(tmp) <- NULL
+  if (!isCombn) {
+    tmp <- data.frame(Corr=as.numeric(tmp[,1]), MSE=as.numeric(tmp[,2]), 
+                      Trait=as.factor(tmp[,3]), allMethods=as.factor(tmp[,4]))
+  } else {
+    tmp <- data.frame(Corr=as.numeric(tmp[,1]), MSE=as.numeric(tmp[,2]), 
+                      Trait=as.factor(tmp[,3]), Combn=as.factor(tmp[,4]))
+  }
+  return(tmp)
+}
+
+best_md <- best_method(allM1)
+best_md_csv <- cbind(best_md[,3:4], round(best_md[,2], 7), round(best_md[,1], 7))
+colnames(best_md_csv) <- c('Trait', 'BestMethod', 'MSE', 'MeanCorr')
+best_md_csv <- best_md_csv[order(best_md_csv$MSE),]
+rownames(best_md_csv) <- NULL
+write.csv(best_md_csv, 'best_md.csv', quote=F, row.names=F)
+
+#=============================== Mean each combn ===============================
+mean_combn <-function(mx) {
+  nam_trait_used <- as.character(unique(mx$Trait))
+  tmp <- foreach (trt = sort(nam_trait_used), .combine='rbind') %do% {
+    lines_trt <- mx[which(mx$Trait == trt), ]
+    #Mean for the same combn:
+    lines_cob <- foreach(cobs = unique(lines_trt$Combn), .combine = 'rbind') %do% {
+      lines_trt_which_combn <- lines_trt[which(lines_trt$Combn == cobs),]
+      c(mean(lines_trt_which_combn[, 1]), mean(lines_trt_which_combn[, 2]), trt, cobs)
+    }
+    lines_cob
+  }
+  rownames(tmp) <- NULL
+  tmp <- data.frame(Corr=as.numeric(tmp[,1]), MSE=as.numeric(tmp[,2]), 
+                    Trait=as.factor(tmp[,3]), Combn=as.factor(tmp[,4]))
+  return(tmp)
+}
